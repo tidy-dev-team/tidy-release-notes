@@ -10,6 +10,8 @@ import {
   render,
   Text,
   Textbox,
+  TextboxAutocomplete,
+  TextboxAutocompleteOption,
   VerticalSpace
 } from '@create-figma-plugin/ui'
 import { emit, on } from '@create-figma-plugin/utilities'
@@ -41,6 +43,7 @@ function Plugin() {
   // ===================
   const [componentSets, setComponentSets] = useState<ComponentSetInfo[]>([])
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null)
+  const [componentSearchValue, setComponentSearchValue] = useState<string>('')
 
   // ===================
   // Sprint State
@@ -60,6 +63,15 @@ function Plugin() {
     const handleComponentSetsPayload = (payload: ComponentSetsPayload) => {
       setComponentSets(payload.componentSets)
       setSelectedComponentId(payload.lastSelectedComponentSetId)
+      // Set the search value to the selected component's name
+      if (payload.lastSelectedComponentSetId) {
+        const selected = payload.componentSets.find(
+          (cs) => cs.id === payload.lastSelectedComponentSetId
+        )
+        if (selected) {
+          setComponentSearchValue(selected.name)
+        }
+      }
     }
 
     on<ComponentSetsLoadedHandler>('COMPONENT_SETS_LOADED', handleComponentSetsPayload)
@@ -86,20 +98,17 @@ function Plugin() {
     emit<FindComponentSetsHandler>('FIND_COMPONENT_SETS')
   }, [])
 
-  const handleComponentDropdownChange = useCallback(
-    (event: Event) => {
-      const target = event.target as HTMLInputElement
-      const newValue = target.value
-      setSelectedComponentId(newValue)
-      emit<SelectComponentSetHandler>('SELECT_COMPONENT_SET', newValue)
+  const handleComponentSearchChange = useCallback((newValue: string) => {
+    setComponentSearchValue(newValue)
 
-      const selected = componentSets.find((cs) => cs.id === newValue)
-      if (selected) {
-        console.log('Selected component set:', selected.name)
-      }
-    },
-    [componentSets]
-  )
+    // Find the component set by name and select it
+    const selected = componentSets.find((cs) => cs.name === newValue)
+    if (selected) {
+      setSelectedComponentId(selected.id)
+      emit<SelectComponentSetHandler>('SELECT_COMPONENT_SET', selected.id)
+      console.log('Selected component set:', selected.name)
+    }
+  }, [componentSets])
 
   // ===================
   // Sprint Handlers
@@ -179,9 +188,8 @@ function Plugin() {
   // ===================
   // Dropdown Options
   // ===================
-  const componentDropdownOptions: DropdownOption[] = componentSets.map((cs) => ({
-    value: cs.id,
-    text: cs.name
+  const componentAutocompleteOptions: TextboxAutocompleteOption[] = componentSets.map((cs) => ({
+    value: cs.name
   }))
 
   const sprintDropdownOptions: DropdownOption[] = sprints.map((s) => ({
@@ -284,10 +292,12 @@ function Plugin() {
       )}
       {componentSets.length > 0 && <VerticalSpace space="small" />}
       {componentSets.length > 0 && (
-        <Dropdown
-          onChange={handleComponentDropdownChange}
-          options={componentDropdownOptions}
-          value={selectedComponentId}
+        <TextboxAutocomplete
+          filter
+          onValueInput={handleComponentSearchChange}
+          options={componentAutocompleteOptions}
+          placeholder="Search components..."
+          value={componentSearchValue}
         />
       )}
       {componentSets.length === 0 && (
