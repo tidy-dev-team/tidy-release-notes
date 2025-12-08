@@ -3,6 +3,7 @@ import {
   Button,
   Columns,
   Container,
+  Divider,
   Dropdown,
   DropdownOption,
   Modal,
@@ -12,11 +13,11 @@ import {
   Textbox,
   TextboxAutocomplete,
   TextboxAutocompleteOption,
-  VerticalSpace
-} from '@create-figma-plugin/ui'
-import { emit, on } from '@create-figma-plugin/utilities'
-import { h } from 'preact'
-import { useCallback, useEffect, useState } from 'preact/hooks'
+  VerticalSpace,
+} from "@create-figma-plugin/ui";
+import { emit, on } from "@create-figma-plugin/utilities";
+import { h } from "preact";
+import { useCallback, useEffect, useState } from "preact/hooks";
 
 import {
   ComponentSetInfo,
@@ -34,26 +35,28 @@ import {
   Sprint,
   SprintsLoadedHandler,
   SprintsPayload,
-  SprintsUpdatedHandler
-} from './types'
+  SprintsUpdatedHandler,
+} from "./types";
 
 function Plugin() {
   // ===================
   // Component Sets State
   // ===================
-  const [componentSets, setComponentSets] = useState<ComponentSetInfo[]>([])
-  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null)
-  const [componentSearchValue, setComponentSearchValue] = useState<string>('')
+  const [componentSets, setComponentSets] = useState<ComponentSetInfo[]>([]);
+  const [selectedComponentId, setSelectedComponentId] =
+    useState<string | null>(null);
+  const [componentSearchValue, setComponentSearchValue] = useState<string>("");
 
   // ===================
   // Sprint State
   // ===================
-  const [sprints, setSprints] = useState<Sprint[]>([])
-  const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null)
-  const [newSprintName, setNewSprintName] = useState<string>('')
-  const [isRenaming, setIsRenaming] = useState<boolean>(false)
-  const [renameSprintName, setRenameSprintName] = useState<string>('')
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false)
+  const [sprints, setSprints] = useState<Sprint[]>([]);
+  const [selectedSprintId, setSelectedSprintId] = useState<string | null>(null);
+  const [newSprintName, setNewSprintName] = useState<string>("");
+  const [isRenaming, setIsRenaming] = useState<boolean>(false);
+  const [renameSprintName, setRenameSprintName] = useState<string>("");
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] =
+    useState<boolean>(false);
 
   // ===================
   // Initialization
@@ -61,143 +64,156 @@ function Plugin() {
   useEffect(() => {
     // Component Sets listeners
     const handleComponentSetsPayload = (payload: ComponentSetsPayload) => {
-      setComponentSets(payload.componentSets)
-      setSelectedComponentId(payload.lastSelectedComponentSetId)
+      setComponentSets(payload.componentSets);
+      setSelectedComponentId(payload.lastSelectedComponentSetId);
       // Set the search value to the selected component's name
       if (payload.lastSelectedComponentSetId) {
         const selected = payload.componentSets.find(
           (cs) => cs.id === payload.lastSelectedComponentSetId
-        )
+        );
         if (selected) {
-          setComponentSearchValue(selected.name)
+          setComponentSearchValue(selected.name);
         }
       }
-    }
+    };
 
-    on<ComponentSetsLoadedHandler>('COMPONENT_SETS_LOADED', handleComponentSetsPayload)
-    on<ComponentSetsFoundHandler>('COMPONENT_SETS_FOUND', handleComponentSetsPayload)
+    on<ComponentSetsLoadedHandler>(
+      "COMPONENT_SETS_LOADED",
+      handleComponentSetsPayload
+    );
+    on<ComponentSetsFoundHandler>(
+      "COMPONENT_SETS_FOUND",
+      handleComponentSetsPayload
+    );
 
     // Sprint listeners
     const handleSprintsPayload = (payload: SprintsPayload) => {
-      setSprints(payload.sprints)
-      setSelectedSprintId(payload.lastSelectedSprintId)
-    }
+      setSprints(payload.sprints);
+      setSelectedSprintId(payload.lastSelectedSprintId);
+    };
 
-    on<SprintsLoadedHandler>('SPRINTS_LOADED', handleSprintsPayload)
-    on<SprintsUpdatedHandler>('SPRINTS_UPDATED', handleSprintsPayload)
+    on<SprintsLoadedHandler>("SPRINTS_LOADED", handleSprintsPayload);
+    on<SprintsUpdatedHandler>("SPRINTS_UPDATED", handleSprintsPayload);
 
     // Load data on startup
-    emit<LoadComponentSetsHandler>('LOAD_COMPONENT_SETS')
-    emit<LoadSprintsHandler>('LOAD_SPRINTS')
-  }, [])
+    emit<LoadComponentSetsHandler>("LOAD_COMPONENT_SETS");
+    emit<LoadSprintsHandler>("LOAD_SPRINTS");
+  }, []);
 
   // ===================
   // Component Sets Handlers
   // ===================
   const handleFindComponentsClick = useCallback(() => {
-    emit<FindComponentSetsHandler>('FIND_COMPONENT_SETS')
-  }, [])
+    emit<FindComponentSetsHandler>("FIND_COMPONENT_SETS");
+  }, []);
 
-  const handleComponentSearchChange = useCallback((newValue: string) => {
-    setComponentSearchValue(newValue)
+  const handleComponentSearchChange = useCallback(
+    (newValue: string) => {
+      setComponentSearchValue(newValue);
 
-    // Find the component set by name and select it
-    const selected = componentSets.find((cs) => cs.name === newValue)
-    if (selected) {
-      setSelectedComponentId(selected.id)
-      emit<SelectComponentSetHandler>('SELECT_COMPONENT_SET', selected.id)
-      console.log('Selected component set:', selected.name)
-    }
-  }, [componentSets])
+      // Find the component set by name and select it
+      const selected = componentSets.find((cs) => cs.name === newValue);
+      if (selected) {
+        setSelectedComponentId(selected.id);
+        emit<SelectComponentSetHandler>("SELECT_COMPONENT_SET", selected.id);
+        console.log("Selected component set:", selected.name);
+      }
+    },
+    [componentSets]
+  );
 
   // ===================
   // Sprint Handlers
   // ===================
   const handleSprintDropdownChange = useCallback(
     (event: Event) => {
-      const target = event.target as HTMLInputElement
-      const newValue = target.value
-      setSelectedSprintId(newValue)
-      emit<SelectSprintHandler>('SELECT_SPRINT', newValue)
+      const target = event.target as HTMLInputElement;
+      const newValue = target.value;
+      setSelectedSprintId(newValue);
+      emit<SelectSprintHandler>("SELECT_SPRINT", newValue);
 
-      const selected = sprints.find((s) => s.id === newValue)
+      const selected = sprints.find((s) => s.id === newValue);
       if (selected) {
-        console.log('Selected sprint:', selected.name)
+        console.log("Selected sprint:", selected.name);
       }
     },
     [sprints]
-  )
+  );
 
   const handleCreateSprint = useCallback(() => {
-    const trimmedName = newSprintName.trim()
+    const trimmedName = newSprintName.trim();
     if (trimmedName) {
-      emit<CreateSprintHandler>('CREATE_SPRINT', trimmedName)
-      setNewSprintName('')
+      emit<CreateSprintHandler>("CREATE_SPRINT", trimmedName);
+      setNewSprintName("");
     }
-  }, [newSprintName])
+  }, [newSprintName]);
 
   const handleNewSprintNameChange = useCallback((event: Event) => {
-    const target = event.target as HTMLInputElement
-    setNewSprintName(target.value)
-  }, [])
+    const target = event.target as HTMLInputElement;
+    setNewSprintName(target.value);
+  }, []);
 
   const handleStartRename = useCallback(() => {
-    const currentSprint = sprints.find((s) => s.id === selectedSprintId)
+    const currentSprint = sprints.find((s) => s.id === selectedSprintId);
     if (currentSprint) {
-      setRenameSprintName(currentSprint.name)
-      setIsRenaming(true)
+      setRenameSprintName(currentSprint.name);
+      setIsRenaming(true);
     }
-  }, [sprints, selectedSprintId])
+  }, [sprints, selectedSprintId]);
 
   const handleRenameSprintNameChange = useCallback((event: Event) => {
-    const target = event.target as HTMLInputElement
-    setRenameSprintName(target.value)
-  }, [])
+    const target = event.target as HTMLInputElement;
+    setRenameSprintName(target.value);
+  }, []);
 
   const handleConfirmRename = useCallback(() => {
-    const trimmedName = renameSprintName.trim()
+    const trimmedName = renameSprintName.trim();
     if (trimmedName && selectedSprintId) {
-      emit<RenameSprintHandler>('RENAME_SPRINT', { id: selectedSprintId, name: trimmedName })
-      setIsRenaming(false)
-      setRenameSprintName('')
+      emit<RenameSprintHandler>("RENAME_SPRINT", {
+        id: selectedSprintId,
+        name: trimmedName,
+      });
+      setIsRenaming(false);
+      setRenameSprintName("");
     }
-  }, [renameSprintName, selectedSprintId])
+  }, [renameSprintName, selectedSprintId]);
 
   const handleCancelRename = useCallback(() => {
-    setIsRenaming(false)
-    setRenameSprintName('')
-  }, [])
+    setIsRenaming(false);
+    setRenameSprintName("");
+  }, []);
 
   const handleOpenDeleteConfirm = useCallback(() => {
     if (selectedSprintId) {
-      setIsDeleteConfirmOpen(true)
+      setIsDeleteConfirmOpen(true);
     }
-  }, [selectedSprintId])
+  }, [selectedSprintId]);
 
   const handleConfirmDelete = useCallback(() => {
     if (selectedSprintId) {
-      emit<DeleteSprintHandler>('DELETE_SPRINT', selectedSprintId)
-      setIsDeleteConfirmOpen(false)
+      emit<DeleteSprintHandler>("DELETE_SPRINT", selectedSprintId);
+      setIsDeleteConfirmOpen(false);
     }
-  }, [selectedSprintId])
+  }, [selectedSprintId]);
 
   const handleCancelDelete = useCallback(() => {
-    setIsDeleteConfirmOpen(false)
-  }, [])
+    setIsDeleteConfirmOpen(false);
+  }, []);
 
   // ===================
   // Dropdown Options
   // ===================
-  const componentAutocompleteOptions: TextboxAutocompleteOption[] = componentSets.map((cs) => ({
-    value: cs.name
-  }))
+  const componentAutocompleteOptions: TextboxAutocompleteOption[] =
+    componentSets.map((cs) => ({
+      value: cs.name,
+    }));
 
   const sprintDropdownOptions: DropdownOption[] = sprints.map((s) => ({
     value: s.id,
-    text: s.name
-  }))
+    text: s.name,
+  }));
 
-  const selectedSprint = sprints.find((s) => s.id === selectedSprintId)
+  const selectedSprint = sprints.find((s) => s.id === selectedSprintId);
 
   // ===================
   // Render
@@ -262,7 +278,11 @@ function Plugin() {
           />
           <VerticalSpace space="extraSmall" />
           <Columns space="extraSmall">
-            <Button fullWidth onClick={handleConfirmRename} disabled={!renameSprintName.trim()}>
+            <Button
+              fullWidth
+              onClick={handleConfirmRename}
+              disabled={!renameSprintName.trim()}
+            >
               Save
             </Button>
             <Button fullWidth onClick={handleCancelRename} secondary>
@@ -272,6 +292,8 @@ function Plugin() {
         </div>
       )}
 
+      <VerticalSpace space="large" />
+      <Divider />
       <VerticalSpace space="large" />
 
       {/* Component Sets Section */}
@@ -302,21 +324,33 @@ function Plugin() {
       )}
       {componentSets.length === 0 && (
         <Text>
-          <Muted>No component sets found. Click "Find Components" to scan.</Muted>
+          <Muted>
+            No component sets found. Click "Find Components" to scan.
+          </Muted>
         </Text>
       )}
 
-      <VerticalSpace space="small" />
+      <VerticalSpace space="large" />
+      <Divider />
+      <VerticalSpace space="large" />
 
       {/* Delete Confirmation Modal */}
-      <Modal onCloseButtonClick={handleCancelDelete} open={isDeleteConfirmOpen} title="Delete Sprint">
-        <div style={{ padding: '16px' }}>
+      <Modal
+        onCloseButtonClick={handleCancelDelete}
+        open={isDeleteConfirmOpen}
+        title="Delete Sprint"
+      >
+        <div style={{ padding: "16px" }}>
           <Text>
-            Are you sure you want to delete sprint "<Bold>{selectedSprint?.name}</Bold>"?
+            Are you sure you want to delete sprint "
+            <Bold>{selectedSprint?.name}</Bold>"?
           </Text>
           <VerticalSpace space="small" />
           <Text>
-            <Muted>This action cannot be undone. All release notes in this sprint will be lost.</Muted>
+            <Muted>
+              This action cannot be undone. All release notes in this sprint
+              will be lost.
+            </Muted>
           </Text>
           <VerticalSpace space="large" />
           <Columns space="extraSmall">
@@ -330,7 +364,7 @@ function Plugin() {
         </div>
       </Modal>
     </Container>
-  )
+  );
 }
 
-export default render(Plugin)
+export default render(Plugin);
