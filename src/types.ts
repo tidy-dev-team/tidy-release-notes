@@ -14,10 +14,23 @@ export interface ComponentSetsPayload {
   lastSelectedComponentSetId: string | null
 }
 
+export type NoteTag = 'bug_fix' | 'enhancement' | 'new_component' | 'deprecation'
+
+export interface ReleaseNote {
+  id: string
+  description: string
+  tag: NoteTag
+  componentSetId: string
+  componentSetName: string
+  createdAt: string // ISO date string
+  authorId: string
+  authorName: string
+}
+
 export interface Sprint {
   id: string
   name: string
-  notes: unknown[]
+  notes: ReleaseNote[]
 }
 
 export interface SprintsPayload {
@@ -103,4 +116,46 @@ export interface SelectSprintHandler extends EventHandler {
 export interface SprintsUpdatedHandler extends EventHandler {
   name: 'SPRINTS_UPDATED'
   handler: (payload: SprintsPayload) => void
+}
+
+// ===================
+// Note Events
+// ===================
+
+export interface AddNotePayload {
+  sprintId: string
+  description: string
+  tag: NoteTag
+  componentSetId: string
+  componentSetName: string
+}
+
+export interface EditNotePayload {
+  sprintId: string
+  noteId: string
+  description: string
+  tag: NoteTag
+}
+
+export interface DeleteNotePayload {
+  sprintId: string
+  noteId: string
+}
+
+// UI -> Main: Add a new note to a sprint
+export interface AddNoteHandler extends EventHandler {
+  name: 'ADD_NOTE'
+  handler: (payload: AddNotePayload) => void
+}
+
+// UI -> Main: Edit an existing note
+export interface EditNoteHandler extends EventHandler {
+  name: 'EDIT_NOTE'
+  handler: (payload: EditNotePayload) => void
+}
+
+// UI -> Main: Delete a note from a sprint
+export interface DeleteNoteHandler extends EventHandler {
+  name: 'DELETE_NOTE'
+  handler: (payload: DeleteNotePayload) => void
 }

@@ -23,6 +23,9 @@
     "id": "tidy-release-notes",
     "name": "Tidy Release Notes",
     "main": "src/main.ts",
-    "ui": "src/ui.tsx"
+    "ui": "src/ui.tsx",
+    "permissions": [
+      "currentuser"
+    ]
   }
 }

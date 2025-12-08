@@ -13,22 +13,28 @@ import {
   Textbox,
   TextboxAutocomplete,
   TextboxAutocompleteOption,
+  TextboxMultiline,
   VerticalSpace,
 } from "@create-figma-plugin/ui";
 import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
-import { useCallback, useEffect, useState } from "preact/hooks";
+import { useCallback, useEffect, useState, useMemo } from "preact/hooks";
 
 import {
+  AddNoteHandler,
   ComponentSetInfo,
   ComponentSetsFoundHandler,
   ComponentSetsLoadedHandler,
   ComponentSetsPayload,
   CreateSprintHandler,
+  DeleteNoteHandler,
   DeleteSprintHandler,
+  EditNoteHandler,
   FindComponentSetsHandler,
   LoadComponentSetsHandler,
   LoadSprintsHandler,
+  NoteTag,
+  ReleaseNote,
   RenameSprintHandler,
   SelectComponentSetHandler,
   SelectSprintHandler,
@@ -38,13 +44,134 @@ import {
   SprintsUpdatedHandler,
 } from "./types";
 
+// ===================
+// Constants
+// ===================
+
+const TAG_OPTIONS: DropdownOption[] = [
+  { value: "bug_fix", text: "Bug fix" },
+  { value: "enhancement", text: "Enhancement" },
+  { value: "new_component", text: "New component" },
+  { value: "deprecation", text: "Deprecation" },
+];
+
+const TAG_COLORS: Record<NoteTag, string> = {
+  bug_fix: "#F24822",
+  enhancement: "#0D99FF",
+  new_component: "#14AE5C",
+  deprecation: "#FFA629",
+};
+
+const TAG_LABELS: Record<NoteTag, string> = {
+  bug_fix: "Bug fix",
+  enhancement: "Enhancement",
+  new_component: "New component",
+  deprecation: "Deprecation",
+};
+
+// ===================
+// Helper Functions
+// ===================
+
+function formatDate(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength).trim() + "...";
+}
+
+// ===================
+// Note Card Component
+// ===================
+
+interface NoteCardProps {
+  note: ReleaseNote;
+  onEdit: (note: ReleaseNote) => void;
+  onDelete: (noteId: string) => void;
+}
+
+function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
+  const tagColor = TAG_COLORS[note.tag];
+  const tagLabel = TAG_LABELS[note.tag];
+
+  return (
+    <div
+      style={{
+        border: "1px solid var(--figma-color-border)",
+        borderRadius: "4px",
+        padding: "12px",
+        marginBottom: "8px",
+      }}
+    >
+      {/* Tag Badge */}
+      <div
+        style={{
+          display: "inline-block",
+          backgroundColor: tagColor,
+          color: "white",
+          padding: "2px 8px",
+          borderRadius: "4px",
+          fontSize: "11px",
+          fontWeight: "bold",
+          marginBottom: "8px",
+        }}
+      >
+        {tagLabel}
+      </div>
+
+      {/* Description */}
+      <div style={{ marginBottom: "8px" }}>
+        <Text>{truncateText(note.description, 100)}</Text>
+      </div>
+
+      {/* Component */}
+      <div style={{ marginBottom: "4px" }}>
+        <Text>
+          <Muted>Component: {note.componentSetName}</Muted>
+        </Text>
+      </div>
+
+      {/* Date & Author */}
+      <div style={{ marginBottom: "8px" }}>
+        <Text>
+          <Muted>
+            {formatDate(note.createdAt)} • {note.authorName}
+          </Muted>
+        </Text>
+      </div>
+
+      {/* Actions */}
+      <Columns space="extraSmall">
+        <Button fullWidth onClick={() => onEdit(note)} secondary>
+          Edit
+        </Button>
+        <Button fullWidth onClick={() => onDelete(note.id)} secondary>
+          Delete
+        </Button>
+      </Columns>
+    </div>
+  );
+}
+
+// ===================
+// Main Plugin Component
+// ===================
+
 function Plugin() {
   // ===================
   // Component Sets State
   // ===================
   const [componentSets, setComponentSets] = useState<ComponentSetInfo[]>([]);
-  const [selectedComponentId, setSelectedComponentId] =
-    useState<string | null>(null);
+  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(
+    null
+  );
   const [componentSearchValue, setComponentSearchValue] = useState<string>("");
 
   // ===================
@@ -59,6 +186,40 @@ function Plugin() {
     useState<boolean>(false);
 
   // ===================
+  // Note State
+  // ===================
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState<boolean>(false);
+  const [editingNote, setEditingNote] = useState<ReleaseNote | null>(null);
+  const [noteDescription, setNoteDescription] = useState<string>("");
+  const [noteTag, setNoteTag] = useState<NoteTag>("enhancement");
+  const [isDeleteNoteConfirmOpen, setIsDeleteNoteConfirmOpen] =
+    useState<boolean>(false);
+  const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(
+    null
+  );
+
+  // ===================
+  // Derived State
+  // ===================
+  const selectedSprint = useMemo(
+    () => sprints.find((s) => s.id === selectedSprintId),
+    [sprints, selectedSprintId]
+  );
+
+  const selectedComponent = useMemo(
+    () => componentSets.find((cs) => cs.id === selectedComponentId),
+    [componentSets, selectedComponentId]
+  );
+
+  const currentSprintNotes = useMemo(() => {
+    if (!selectedSprint) return [];
+    return [...selectedSprint.notes].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [selectedSprint]);
+
+  // ===================
   // Initialization
   // ===================
   useEffect(() => {
@@ -66,7 +227,6 @@ function Plugin() {
     const handleComponentSetsPayload = (payload: ComponentSetsPayload) => {
       setComponentSets(payload.componentSets);
       setSelectedComponentId(payload.lastSelectedComponentSetId);
-      // Set the search value to the selected component's name
       if (payload.lastSelectedComponentSetId) {
         const selected = payload.componentSets.find(
           (cs) => cs.id === payload.lastSelectedComponentSetId
@@ -110,8 +270,6 @@ function Plugin() {
   const handleComponentSearchChange = useCallback(
     (newValue: string) => {
       setComponentSearchValue(newValue);
-
-      // Find the component set by name and select it
       const selected = componentSets.find((cs) => cs.name === newValue);
       if (selected) {
         setSelectedComponentId(selected.id);
@@ -201,6 +359,96 @@ function Plugin() {
   }, []);
 
   // ===================
+  // Note Handlers
+  // ===================
+  const handleOpenAddNote = useCallback(() => {
+    setEditingNote(null);
+    setNoteDescription("");
+    setNoteTag("enhancement");
+    setIsNoteModalOpen(true);
+  }, []);
+
+  const handleOpenEditNote = useCallback((note: ReleaseNote) => {
+    setEditingNote(note);
+    setNoteDescription(note.description);
+    setNoteTag(note.tag);
+    setIsNoteModalOpen(true);
+  }, []);
+
+  const handleCloseNoteModal = useCallback(() => {
+    setIsNoteModalOpen(false);
+    setEditingNote(null);
+    setNoteDescription("");
+    setNoteTag("enhancement");
+  }, []);
+
+  const handleNoteDescriptionChange = useCallback((newValue: string) => {
+    setNoteDescription(newValue);
+  }, []);
+
+  const handleNoteTagChange = useCallback((event: Event) => {
+    const target = event.target as HTMLInputElement;
+    setNoteTag(target.value as NoteTag);
+  }, []);
+
+  const handleSaveNote = useCallback(() => {
+    const trimmedDescription = noteDescription.trim();
+    if (!trimmedDescription || !selectedSprintId || !selectedComponentId || !selectedComponent) {
+      return;
+    }
+
+    if (editingNote) {
+      // Edit existing note
+      emit<EditNoteHandler>("EDIT_NOTE", {
+        sprintId: selectedSprintId,
+        noteId: editingNote.id,
+        description: trimmedDescription,
+        tag: noteTag,
+      });
+    } else {
+      // Add new note
+      emit<AddNoteHandler>("ADD_NOTE", {
+        sprintId: selectedSprintId,
+        description: trimmedDescription,
+        tag: noteTag,
+        componentSetId: selectedComponentId,
+        componentSetName: selectedComponent.name,
+      });
+    }
+
+    handleCloseNoteModal();
+  }, [
+    noteDescription,
+    noteTag,
+    selectedSprintId,
+    selectedComponentId,
+    selectedComponent,
+    editingNote,
+    handleCloseNoteModal,
+  ]);
+
+  const handleOpenDeleteNoteConfirm = useCallback((noteId: string) => {
+    setPendingDeleteNoteId(noteId);
+    setIsDeleteNoteConfirmOpen(true);
+  }, []);
+
+  const handleConfirmDeleteNote = useCallback(() => {
+    if (pendingDeleteNoteId && selectedSprintId) {
+      emit<DeleteNoteHandler>("DELETE_NOTE", {
+        sprintId: selectedSprintId,
+        noteId: pendingDeleteNoteId,
+      });
+      setIsDeleteNoteConfirmOpen(false);
+      setPendingDeleteNoteId(null);
+    }
+  }, [pendingDeleteNoteId, selectedSprintId]);
+
+  const handleCancelDeleteNote = useCallback(() => {
+    setIsDeleteNoteConfirmOpen(false);
+    setPendingDeleteNoteId(null);
+  }, []);
+
+  // ===================
   // Dropdown Options
   // ===================
   const componentAutocompleteOptions: TextboxAutocompleteOption[] =
@@ -213,7 +461,7 @@ function Plugin() {
     text: s.name,
   }));
 
-  const selectedSprint = sprints.find((s) => s.id === selectedSprintId);
+  const canAddNote = selectedSprintId && selectedComponentId;
 
   // ===================
   // Render
@@ -334,7 +582,48 @@ function Plugin() {
       <Divider />
       <VerticalSpace space="large" />
 
-      {/* Delete Confirmation Modal */}
+      {/* Release Notes Section */}
+      <Text>
+        <Bold>Release Notes</Bold>
+      </Text>
+      <VerticalSpace space="small" />
+
+      <Button
+        fullWidth
+        onClick={handleOpenAddNote}
+        disabled={!canAddNote}
+      >
+        + Add Note
+      </Button>
+      {!canAddNote && (
+        <div>
+          <VerticalSpace space="small" />
+          <Text>
+            <Muted>Select a sprint and component to add notes.</Muted>
+          </Text>
+        </div>
+      )}
+      <VerticalSpace space="small" />
+
+      {/* Notes List */}
+      {currentSprintNotes.length === 0 && selectedSprintId && (
+        <Text>
+          <Muted>No notes yet. Click "Add Note" to create one.</Muted>
+        </Text>
+      )}
+
+      {currentSprintNotes.map((note) => (
+        <NoteCard
+          key={note.id}
+          note={note}
+          onEdit={handleOpenEditNote}
+          onDelete={handleOpenDeleteNoteConfirm}
+        />
+      ))}
+
+      <VerticalSpace space="small" />
+
+      {/* Delete Sprint Confirmation Modal */}
       <Modal
         onCloseButtonClick={handleCancelDelete}
         open={isDeleteConfirmOpen}
@@ -358,6 +647,100 @@ function Plugin() {
               Delete
             </Button>
             <Button fullWidth onClick={handleCancelDelete} secondary>
+              Cancel
+            </Button>
+          </Columns>
+        </div>
+      </Modal>
+
+      {/* Add/Edit Note Modal */}
+      <Modal
+        onCloseButtonClick={handleCloseNoteModal}
+        open={isNoteModalOpen}
+        title={editingNote ? "Edit Note" : "Add Note"}
+      >
+        <div style={{ padding: "16px" }}>
+          <Text>
+            <Bold>Description</Bold>
+          </Text>
+          <VerticalSpace space="small" />
+          <TextboxMultiline
+            onValueInput={handleNoteDescriptionChange}
+            placeholder="Describe the change..."
+            rows={4}
+            value={noteDescription}
+          />
+          <VerticalSpace space="medium" />
+
+          <Text>
+            <Bold>Tag</Bold>
+          </Text>
+          <VerticalSpace space="small" />
+          <Dropdown
+            onChange={handleNoteTagChange}
+            options={TAG_OPTIONS}
+            value={noteTag}
+          />
+          <VerticalSpace space="medium" />
+
+          <Text>
+            <Bold>Component Set</Bold>
+          </Text>
+          <VerticalSpace space="small" />
+          <Text>
+            <Muted>
+              {editingNote
+                ? editingNote.componentSetName
+                : selectedComponent?.name ?? "None selected"}
+            </Muted>
+          </Text>
+
+          {editingNote && (
+            <div>
+              <VerticalSpace space="medium" />
+              <Text>
+                <Muted>
+                  Created: {formatDate(editingNote.createdAt)} by{" "}
+                  {editingNote.authorName}
+                </Muted>
+              </Text>
+            </div>
+          )}
+
+          <VerticalSpace space="large" />
+          <Columns space="extraSmall">
+            <Button
+              fullWidth
+              onClick={handleSaveNote}
+              disabled={!noteDescription.trim()}
+            >
+              {editingNote ? "Save Changes" : "Add Note"}
+            </Button>
+            <Button fullWidth onClick={handleCloseNoteModal} secondary>
+              Cancel
+            </Button>
+          </Columns>
+        </div>
+      </Modal>
+
+      {/* Delete Note Confirmation Modal */}
+      <Modal
+        onCloseButtonClick={handleCancelDeleteNote}
+        open={isDeleteNoteConfirmOpen}
+        title="Delete Note"
+      >
+        <div style={{ padding: "16px" }}>
+          <Text>Are you sure you want to delete this note?</Text>
+          <VerticalSpace space="small" />
+          <Text>
+            <Muted>This action cannot be undone.</Muted>
+          </Text>
+          <VerticalSpace space="large" />
+          <Columns space="extraSmall">
+            <Button fullWidth onClick={handleConfirmDeleteNote} danger>
+              Delete
+            </Button>
+            <Button fullWidth onClick={handleCancelDeleteNote} secondary>
               Cancel
             </Button>
           </Columns>

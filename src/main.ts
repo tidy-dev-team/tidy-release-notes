@@ -16,7 +16,14 @@ import {
   RenameSprintHandler,
   DeleteSprintHandler,
   SelectSprintHandler,
-  SprintsUpdatedHandler
+  SprintsUpdatedHandler,
+  ReleaseNote,
+  AddNoteHandler,
+  AddNotePayload,
+  EditNoteHandler,
+  EditNotePayload,
+  DeleteNoteHandler,
+  DeleteNotePayload
 } from './types'
 
 const PLUGIN_NAMESPACE = 'tidy_release_notes'
@@ -214,8 +221,66 @@ export default function () {
     setLastSprintId(id)
   })
 
+  // ===================
+  // Note Handlers
+  // ===================
+
+  on<AddNoteHandler>('ADD_NOTE', function (data: AddNotePayload) {
+    const sprints = loadAllSprints()
+    const sprint = sprints.find((s) => s.id === data.sprintId)
+
+    if (sprint) {
+      const note: ReleaseNote = {
+        id: Date.now().toString(),
+        description: data.description,
+        tag: data.tag,
+        componentSetId: data.componentSetId,
+        componentSetName: data.componentSetName,
+        createdAt: new Date().toISOString(),
+        authorId: figma.currentUser?.id ?? 'unknown',
+        authorName: figma.currentUser?.name ?? 'Unknown User'
+      }
+
+      sprint.notes.push(note)
+      saveSprint(sprint)
+    }
+
+    const payload = getSprintsPayload()
+    emit<SprintsUpdatedHandler>('SPRINTS_UPDATED', payload)
+  })
+
+  on<EditNoteHandler>('EDIT_NOTE', function (data: EditNotePayload) {
+    const sprints = loadAllSprints()
+    const sprint = sprints.find((s) => s.id === data.sprintId)
+
+    if (sprint) {
+      const note = sprint.notes.find((n) => n.id === data.noteId)
+      if (note) {
+        note.description = data.description
+        note.tag = data.tag
+        saveSprint(sprint)
+      }
+    }
+
+    const payload = getSprintsPayload()
+    emit<SprintsUpdatedHandler>('SPRINTS_UPDATED', payload)
+  })
+
+  on<DeleteNoteHandler>('DELETE_NOTE', function (data: DeleteNotePayload) {
+    const sprints = loadAllSprints()
+    const sprint = sprints.find((s) => s.id === data.sprintId)
+
+    if (sprint) {
+      sprint.notes = sprint.notes.filter((n) => n.id !== data.noteId)
+      saveSprint(sprint)
+    }
+
+    const payload = getSprintsPayload()
+    emit<SprintsUpdatedHandler>('SPRINTS_UPDATED', payload)
+  })
+
   showUI({
-    height: 400,
+    height: 600,
     width: 320
   })
 }
