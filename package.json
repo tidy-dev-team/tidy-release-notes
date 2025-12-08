@@ -1,4 +1,6 @@
 {
+  "name": "tidy-release-notes",
+  "version": "1.0.0",
   "dependencies": {
     "@create-figma-plugin/ui": "^4.0.3",
     "@create-figma-plugin/utilities": "^4.0.3",
@@ -18,8 +20,8 @@
     "editorType": [
       "figma"
     ],
-    "id": "preact-rectangles",
-    "name": "Preact Rectangles",
+    "id": "tidy-release-notes",
+    "name": "Tidy Release Notes",
     "main": "src/main.ts",
     "ui": "src/ui.tsx"
   }

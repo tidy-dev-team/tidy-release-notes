@@ -1,31 +1,60 @@
-import { once, showUI } from '@create-figma-plugin/utilities'
+import { on, emit, showUI } from '@create-figma-plugin/utilities'
 
-import { CloseHandler, CreateRectanglesHandler } from './types'
+import {
+  FindComponentSetsHandler,
+  LoadComponentSetsHandler,
+  ComponentSetsFoundHandler,
+  ComponentSetsLoadedHandler,
+  ComponentSetInfo
+} from './types'
+
+const PLUGIN_NAMESPACE = 'tidy_release_notes'
+const COMPONENT_SETS_KEY = 'componentSets'
 
 export default function () {
-  once<CreateRectanglesHandler>('CREATE_RECTANGLES', function (count: number) {
-    const nodes: Array<SceneNode> = []
-    for (let i = 0; i < count; i++) {
-      const rect = figma.createRectangle()
-      rect.x = i * 150
-      rect.fills = [
-        {
-          color: { b: 0, g: 0.5, r: 1 },
-          type: 'SOLID'
-        }
-      ]
-      figma.currentPage.appendChild(rect)
-      nodes.push(rect)
+  // Handle request to find all component sets
+  on<FindComponentSetsHandler>('FIND_COMPONENT_SETS', function () {
+    const componentSetNodes = figma.root.findAllWithCriteria({
+      types: ['COMPONENT_SET']
+    })
+
+    const componentSets: ComponentSetInfo[] = componentSetNodes.map((node) => ({
+      id: node.id,
+      name: node.name
+    }))
+
+    // Save to shared plugin data
+    figma.root.setSharedPluginData(
+      PLUGIN_NAMESPACE,
+      COMPONENT_SETS_KEY,
+      JSON.stringify(componentSets)
+    )
+
+    // Send back to UI
+    emit<ComponentSetsFoundHandler>('COMPONENT_SETS_FOUND', componentSets)
+  })
+
+  // Handle request to load saved component sets
+  on<LoadComponentSetsHandler>('LOAD_COMPONENT_SETS', function () {
+    const savedData = figma.root.getSharedPluginData(
+      PLUGIN_NAMESPACE,
+      COMPONENT_SETS_KEY
+    )
+
+    let componentSets: ComponentSetInfo[] = []
+    if (savedData) {
+      try {
+        componentSets = JSON.parse(savedData)
+      } catch (e) {
+        console.error('Failed to parse saved component sets:', e)
+      }
     }
-    figma.currentPage.selection = nodes
-    figma.viewport.scrollAndZoomIntoView(nodes)
-    figma.closePlugin()
+
+    emit<ComponentSetsLoadedHandler>('COMPONENT_SETS_LOADED', componentSets)
   })
-  once<CloseHandler>('CLOSE', function () {
-    figma.closePlugin()
-  })
+
   showUI({
-    height: 137,
-    width: 240
+    height: 200,
+    width: 300
   })
 }
