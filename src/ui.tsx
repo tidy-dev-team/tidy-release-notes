@@ -452,9 +452,12 @@ function Plugin() {
   // Dropdown Options
   // ===================
   const componentAutocompleteOptions: TextboxAutocompleteOption[] =
-    componentSets.map((cs) => ({
-      value: cs.name,
-    }));
+    [...componentSets]
+      .filter((cs) => !cs.name.startsWith('.'))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((cs) => ({
+        value: cs.name,
+      }));
 
   const sprintDropdownOptions: DropdownOption[] = sprints.map((s) => ({
     value: s.id,
