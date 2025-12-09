@@ -228,6 +228,7 @@ async function buildSprintNotesTable(sprint: Sprint, notes: ReleaseNote[]): Prom
     const componentText = figma.createText()
     componentText.fontName = { family: 'Inter', style: 'Regular' }
     componentText.characters = note.componentSetName
+    componentText.fills = [{ type: 'SOLID', color: { r: 0x97 / 255, g: 0x47 / 255, b: 0xFF / 255 } }]
 
     componentText.setRangeHyperlink(0, componentText.characters.length, {
       type: 'NODE',
@@ -235,9 +236,17 @@ async function buildSprintNotesTable(sprint: Sprint, notes: ReleaseNote[]): Prom
     })
 
     // Tag
+    const tagColors: Record<string, { r: number; g: number; b: number }> = {
+      bug_fix: { r: 0xF2 / 255, g: 0x48 / 255, b: 0x22 / 255 },
+      enhancement: { r: 0x0D / 255, g: 0x99 / 255, b: 0xFF / 255 },
+      new_component: { r: 0x14 / 255, g: 0xAE / 255, b: 0x5C / 255 },
+      deprecation: { r: 0xFF / 255, g: 0xA6 / 255, b: 0x29 / 255 }
+    }
     const tagText = figma.createText()
     tagText.fontName = { family: 'Inter', style: 'Regular' }
     tagText.characters = note.tag
+    const tagColor = tagColors[note.tag] || { r: 0, g: 0, b: 0 }
+    tagText.fills = [{ type: 'SOLID', color: tagColor }]
 
     // Description
     const descriptionText = figma.createText()

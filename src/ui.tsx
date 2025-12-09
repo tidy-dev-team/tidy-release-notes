@@ -139,7 +139,8 @@ function NoteCard({ note, onView, onEdit, onDelete }: NoteCardProps) {
       {/* Component */}
       <div style={{ marginBottom: "4px" }}>
         <Text>
-          <Muted>Component: {note.componentSetName}</Muted>
+          <Muted>Component: </Muted>
+          <span style={{ color: "#9747FF" }}>{note.componentSetName}</span>
         </Text>
       </div>
 
