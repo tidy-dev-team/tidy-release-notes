@@ -4,6 +4,7 @@
   "dependencies": {
     "@create-figma-plugin/ui": "^4.0.3",
     "@create-figma-plugin/utilities": "^4.0.3",
+    "@tabler/icons-preact": "^3.0.0",
     "preact": ">=10"
   },
   "devDependencies": {

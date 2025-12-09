@@ -16,6 +16,7 @@ import {
   TextboxMultiline,
   VerticalSpace,
 } from "@create-figma-plugin/ui";
+import { IconEdit, IconTrash } from "@tabler/icons-preact";
 import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
 import { useCallback, useEffect, useState, useMemo } from "preact/hooks";
@@ -150,10 +151,14 @@ function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
       {/* Actions */}
       <Columns space="extraSmall">
         <Button fullWidth onClick={() => onEdit(note)} secondary>
-          Edit
+          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            <IconEdit size={16} />
+          </div>
         </Button>
         <Button fullWidth onClick={() => onDelete(note.id)} secondary>
-          Delete
+          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            <IconTrash size={16} />
+          </div>
         </Button>
       </Columns>
     </div>
@@ -511,10 +516,14 @@ function Plugin() {
       {selectedSprintId && !isRenaming && (
         <Columns space="extraSmall">
           <Button fullWidth onClick={handleStartRename} secondary>
-            Rename
+            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+              <IconEdit size={16} />
+            </div>
           </Button>
           <Button fullWidth onClick={handleOpenDeleteConfirm} secondary>
-            Delete
+            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+              <IconTrash size={16} />
+            </div>
           </Button>
         </Columns>
       )}
