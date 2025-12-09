@@ -172,6 +172,36 @@ function getOrCreateReleaseNotesFrame(page: PageNode): FrameNode {
   return frame
 }
 
+function getOrCreateComponentReleaseNotesFrame(componentSet: ComponentSetNode): FrameNode {
+  const page = findParentPage(componentSet)
+  if (!page) {
+    throw new Error('Component set has no parent page')
+  }
+
+  const frameName = `${componentSet.name}-release-notes`
+  const existing = page.children.find(
+    (child) => child.type === 'FRAME' && child.name === frameName
+  ) as FrameNode | undefined
+
+  if (existing) {
+    return existing
+  }
+
+  const frame = figma.createFrame()
+  frame.name = frameName
+  frame.layoutMode = 'VERTICAL'
+  frame.primaryAxisSizingMode = 'AUTO'
+  frame.counterAxisSizingMode = 'AUTO'
+  frame.itemSpacing = 20
+  frame.paddingTop = 0
+  frame.paddingRight = 0
+  frame.paddingBottom = 0
+  frame.paddingLeft = 0
+
+  page.appendChild(frame)
+  return frame
+}
+
 async function buildSprintNotesTable(sprint: Sprint, notes: ReleaseNote[]): Promise<FrameNode> {
   await figma.loadFontAsync({ family: 'Inter', style: 'Regular' })
   await figma.loadFontAsync({ family: 'Inter', style: 'Bold' })
@@ -469,6 +499,38 @@ export default function () {
       frame.insertChild(0, table)
     }
 
+    // Build per-component tables in the background
+    const notesByComponentSet = new Map<string, ReleaseNote[]>()
+    for (const note of sprint.notes) {
+      const existing = notesByComponentSet.get(note.componentSetId) || []
+      existing.push(note)
+      notesByComponentSet.set(note.componentSetId, existing)
+    }
+
+    for (const entry of Array.from(notesByComponentSet.entries())) {
+      const componentSetId = entry[0]
+      const notes = entry[1]
+      const node = figma.getNodeById(componentSetId)
+      if (!node || node.type !== 'COMPONENT_SET') {
+        continue
+      }
+
+      const componentSet = node as ComponentSetNode
+      const componentFrame = getOrCreateComponentReleaseNotesFrame(componentSet)
+      const componentTable = await buildSprintNotesTable(sprint, notes)
+
+      if (componentFrame.children.length === 0) {
+        componentFrame.appendChild(componentTable)
+      } else {
+        componentFrame.insertChild(0, componentTable)
+      }
+
+      // Position the frame to the left of the component set, aligned by top, with 100px gap
+      componentFrame.x = componentSet.x - componentFrame.width - 100
+      componentFrame.y = componentSet.y
+    }
+
+    // Only navigate to the aggregated table
     figma.currentPage = page
     figma.viewport.scrollAndZoomIntoView([frame])
 
