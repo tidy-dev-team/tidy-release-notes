@@ -24,7 +24,9 @@ import {
   EditNotePayload,
   DeleteNoteHandler,
   DeleteNotePayload,
-  ViewComponentSetHandler
+  ViewComponentSetHandler,
+  PublishSprintReleaseNotesHandler,
+  SprintReleaseNotesPublishedHandler
 } from './types'
 
 const PLUGIN_NAMESPACE = 'tidy_release_notes'
@@ -127,6 +129,136 @@ function findParentPage(node: BaseNode): PageNode | null {
     current = current.parent
   }
   return null
+}
+
+function getOrCreateReleaseNotesPage(): PageNode {
+  const existing = figma.root.children.find(
+    (child) => child.type === 'PAGE' && child.name === 'Release notes'
+  ) as PageNode | undefined
+
+  if (existing) {
+    return existing
+  }
+
+  const page = figma.createPage()
+  page.name = 'Release notes'
+  // New pages are appended to figma.root by default as last child
+  return page
+}
+
+function getOrCreateReleaseNotesFrame(page: PageNode): FrameNode {
+  const existing = page.children.find(
+    (child) => child.type === 'FRAME' && child.name === 'release-notes-frame'
+  ) as FrameNode | undefined
+
+  if (existing) {
+    return existing
+  }
+
+  const frame = figma.createFrame()
+  frame.name = 'release-notes-frame'
+  frame.layoutMode = 'VERTICAL'
+  frame.primaryAxisSizingMode = 'AUTO'
+  frame.counterAxisSizingMode = 'AUTO'
+  frame.itemSpacing = 20
+  frame.paddingTop = 0
+  frame.paddingRight = 0
+  frame.paddingBottom = 0
+  frame.paddingLeft = 0
+  frame.x = 0
+  frame.y = 0
+
+  page.appendChild(frame)
+  return frame
+}
+
+async function buildSprintNotesTable(sprint: Sprint, notes: ReleaseNote[]): Promise<FrameNode> {
+  await figma.loadFontAsync({ family: 'Inter', style: 'Regular' })
+  await figma.loadFontAsync({ family: 'Inter', style: 'Bold' })
+
+  const table = figma.createFrame()
+  table.name = `Release notes – ${sprint.name}`
+  table.layoutMode = 'VERTICAL'
+  table.primaryAxisSizingMode = 'AUTO'
+  table.counterAxisSizingMode = 'AUTO'
+  table.itemSpacing = 8
+
+  // Header row: sprint name + publish date
+  const headerRow = figma.createFrame()
+  headerRow.layoutMode = 'HORIZONTAL'
+  headerRow.primaryAxisSizingMode = 'AUTO'
+  headerRow.counterAxisSizingMode = 'AUTO'
+  headerRow.itemSpacing = 16
+
+  const headerText = figma.createText()
+  const now = new Date()
+  const formattedDate = now.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+  headerText.characters = `Sprint ${sprint.name} – ${formattedDate}`
+  headerText.fontName = { family: 'Inter', style: 'Bold' }
+
+  headerRow.appendChild(headerText)
+  table.appendChild(headerRow)
+
+  // Note rows, newest first
+  const sortedNotes = [...notes].sort((a, b) => {
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  })
+
+  for (const note of sortedNotes) {
+    const row = figma.createFrame()
+    row.layoutMode = 'HORIZONTAL'
+    row.primaryAxisSizingMode = 'AUTO'
+    row.counterAxisSizingMode = 'AUTO'
+    row.itemSpacing = 16
+
+    // Date of adding note
+    const dateText = figma.createText()
+    dateText.fontName = { family: 'Inter', style: 'Regular' }
+    dateText.characters = new Date(note.createdAt).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+
+    // Component name with hyperlink
+    const componentText = figma.createText()
+    componentText.fontName = { family: 'Inter', style: 'Regular' }
+    componentText.characters = note.componentSetName
+
+    componentText.setRangeHyperlink(0, componentText.characters.length, {
+      type: 'NODE',
+      value: note.componentSetId
+    })
+
+    // Tag
+    const tagText = figma.createText()
+    tagText.fontName = { family: 'Inter', style: 'Regular' }
+    tagText.characters = note.tag
+
+    // Description
+    const descriptionText = figma.createText()
+    descriptionText.fontName = { family: 'Inter', style: 'Regular' }
+    descriptionText.characters = note.description
+
+    // Author
+    const authorText = figma.createText()
+    authorText.fontName = { family: 'Inter', style: 'Regular' }
+    authorText.characters = note.authorName
+
+    row.appendChild(dateText)
+    row.appendChild(componentText)
+    row.appendChild(tagText)
+    row.appendChild(descriptionText)
+    row.appendChild(authorText)
+
+    table.appendChild(row)
+  }
+
+  return table
 }
 
 // ===================
@@ -306,6 +438,32 @@ export default function () {
       // Zoom and scroll viewport to the component set
       figma.viewport.scrollAndZoomIntoView([node])
     }
+  })
+
+  on<PublishSprintReleaseNotesHandler>('PUBLISH_SPRINT_RELEASE_NOTES', async function (sprintId: string) {
+    const sprints = loadAllSprints()
+    const sprint = sprints.find((s) => s.id === sprintId)
+
+    if (!sprint || sprint.notes.length === 0) {
+      emit<SprintReleaseNotesPublishedHandler>('SPRINT_RELEASE_NOTES_PUBLISHED')
+      return
+    }
+
+    const page = getOrCreateReleaseNotesPage()
+    const frame = getOrCreateReleaseNotesFrame(page)
+
+    const table = await buildSprintNotesTable(sprint, sprint.notes)
+
+    if (frame.children.length === 0) {
+      frame.appendChild(table)
+    } else {
+      frame.insertChild(0, table)
+    }
+
+    figma.currentPage = page
+    figma.viewport.scrollAndZoomIntoView([frame])
+
+    emit<SprintReleaseNotesPublishedHandler>('SPRINT_RELEASE_NOTES_PUBLISHED')
   })
 
   showUI({

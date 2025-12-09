@@ -165,3 +165,15 @@ export interface ViewComponentSetHandler extends EventHandler {
   name: 'VIEW_COMPONENT_SET'
   handler: (componentSetId: string) => void
 }
+
+// UI -> Main: Publish aggregated sprint release notes to canvas
+export interface PublishSprintReleaseNotesHandler extends EventHandler {
+  name: 'PUBLISH_SPRINT_RELEASE_NOTES'
+  handler: (sprintId: string) => void
+}
+
+// Main -> UI: Aggregated sprint release notes publishing finished
+export interface SprintReleaseNotesPublishedHandler extends EventHandler {
+  name: 'SPRINT_RELEASE_NOTES_PUBLISHED'
+  handler: () => void
+}

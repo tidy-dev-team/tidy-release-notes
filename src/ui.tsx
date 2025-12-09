@@ -16,7 +16,7 @@ import {
   TextboxMultiline,
   VerticalSpace,
 } from "@create-figma-plugin/ui";
-import { IconEdit, IconFocus2, IconTrash } from "@tabler/icons-preact";
+import { IconColumns, IconEdit, IconFocus2, IconTrash } from "@tabler/icons-preact";
 import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
 import { useCallback, useEffect, useState, useMemo } from "preact/hooks";
@@ -44,6 +44,8 @@ import {
   SprintsPayload,
   SprintsUpdatedHandler,
   ViewComponentSetHandler,
+  PublishSprintReleaseNotesHandler,
+  SprintReleaseNotesPublishedHandler,
 } from "./types";
 
 // ===================
@@ -213,6 +215,8 @@ function Plugin() {
     useState<boolean>(false);
   const [pendingDeleteNoteId, setPendingDeleteNoteId] =
     useState<string | null>(null);
+  const [isPublishingSprintNotes, setIsPublishingSprintNotes] =
+    useState<boolean>(false);
 
   // ===================
   // Derived State
@@ -270,6 +274,13 @@ function Plugin() {
 
     on<SprintsLoadedHandler>("SPRINTS_LOADED", handleSprintsPayload);
     on<SprintsUpdatedHandler>("SPRINTS_UPDATED", handleSprintsPayload);
+
+    on<SprintReleaseNotesPublishedHandler>(
+      "SPRINT_RELEASE_NOTES_PUBLISHED",
+      () => {
+        setIsPublishingSprintNotes(false);
+      }
+    );
 
     // Load data on startup
     emit<LoadComponentSetsHandler>("LOAD_COMPONENT_SETS");
@@ -361,6 +372,17 @@ function Plugin() {
     if (selectedSprintId) {
       setIsDeleteConfirmOpen(true);
     }
+  }, [selectedSprintId]);
+
+  const handlePublishSprintNotes = useCallback(() => {
+    if (!selectedSprintId) {
+      return;
+    }
+    setIsPublishingSprintNotes(true);
+    emit<PublishSprintReleaseNotesHandler>(
+      "PUBLISH_SPRINT_RELEASE_NOTES",
+      selectedSprintId
+    );
   }, [selectedSprintId]);
 
   const handleConfirmDelete = useCallback(() => {
@@ -533,9 +555,25 @@ function Plugin() {
       )}
       <VerticalSpace space="small" />
 
-      {/* Rename / Delete Buttons */}
+      {/* Sprint Action Buttons */}
       {selectedSprintId && !isRenaming && (
         <Columns space="extraSmall">
+          <Button
+            fullWidth
+            onClick={handlePublishSprintNotes}
+            secondary
+            disabled={isPublishingSprintNotes}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
+              <IconColumns size={16} />
+            </div>
+          </Button>
           <Button fullWidth onClick={handleStartRename} secondary>
             <div
               style={{
@@ -595,7 +633,7 @@ function Plugin() {
       </Text>
       <VerticalSpace space="small" />
 
-      <Button fullWidth onClick={handleFindComponentsClick}>
+      <Button fullWidth onClick={handleFindComponentsClick} secondary>
         Scan for new components
       </Button>
       <VerticalSpace space="small" />
