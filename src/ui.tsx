@@ -16,7 +16,7 @@ import {
   TextboxMultiline,
   VerticalSpace,
 } from "@create-figma-plugin/ui";
-import { IconEdit, IconTrash } from "@tabler/icons-preact";
+import { IconEdit, IconFocus2, IconTrash } from "@tabler/icons-preact";
 import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
 import { useCallback, useEffect, useState, useMemo } from "preact/hooks";
@@ -43,6 +43,7 @@ import {
   SprintsLoadedHandler,
   SprintsPayload,
   SprintsUpdatedHandler,
+  ViewComponentSetHandler,
 } from "./types";
 
 // ===================
@@ -94,11 +95,12 @@ function truncateText(text: string, maxLength: number): string {
 
 interface NoteCardProps {
   note: ReleaseNote;
+  onView: (note: ReleaseNote) => void;
   onEdit: (note: ReleaseNote) => void;
   onDelete: (noteId: string) => void;
 }
 
-function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
+function NoteCard({ note, onView, onEdit, onDelete }: NoteCardProps) {
   const tagColor = TAG_COLORS[note.tag];
   const tagLabel = TAG_LABELS[note.tag];
 
@@ -150,13 +152,24 @@ function NoteCard({ note, onEdit, onDelete }: NoteCardProps) {
 
       {/* Actions */}
       <Columns space="extraSmall">
+        <Button fullWidth onClick={() => onView(note)} secondary>
+          <div
+            style={{ display: "flex", justifyContent: "center", width: "100%" }}
+          >
+            <IconFocus2 size={16} />
+          </div>
+        </Button>
         <Button fullWidth onClick={() => onEdit(note)} secondary>
-          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          <div
+            style={{ display: "flex", justifyContent: "center", width: "100%" }}
+          >
             <IconEdit size={16} />
           </div>
         </Button>
         <Button fullWidth onClick={() => onDelete(note.id)} secondary>
-          <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          <div
+            style={{ display: "flex", justifyContent: "center", width: "100%" }}
+          >
             <IconTrash size={16} />
           </div>
         </Button>
@@ -174,9 +187,8 @@ function Plugin() {
   // Component Sets State
   // ===================
   const [componentSets, setComponentSets] = useState<ComponentSetInfo[]>([]);
-  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(
-    null
-  );
+  const [selectedComponentId, setSelectedComponentId] =
+    useState<string | null>(null);
   const [componentSearchValue, setComponentSearchValue] = useState<string>("");
 
   // ===================
@@ -199,9 +211,8 @@ function Plugin() {
   const [noteTag, setNoteTag] = useState<NoteTag>("enhancement");
   const [isDeleteNoteConfirmOpen, setIsDeleteNoteConfirmOpen] =
     useState<boolean>(false);
-  const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(
-    null
-  );
+  const [pendingDeleteNoteId, setPendingDeleteNoteId] =
+    useState<string | null>(null);
 
   // ===================
   // Derived State
@@ -373,6 +384,10 @@ function Plugin() {
     setIsNoteModalOpen(true);
   }, []);
 
+  const handleViewNoteComponent = useCallback((note: ReleaseNote) => {
+    emit<ViewComponentSetHandler>("VIEW_COMPONENT_SET", note.componentSetId);
+  }, []);
+
   const handleOpenEditNote = useCallback((note: ReleaseNote) => {
     setEditingNote(note);
     setNoteDescription(note.description);
@@ -398,7 +413,12 @@ function Plugin() {
 
   const handleSaveNote = useCallback(() => {
     const trimmedDescription = noteDescription.trim();
-    if (!trimmedDescription || !selectedSprintId || !selectedComponentId || !selectedComponent) {
+    if (
+      !trimmedDescription ||
+      !selectedSprintId ||
+      !selectedComponentId ||
+      !selectedComponent
+    ) {
       return;
     }
 
@@ -456,13 +476,14 @@ function Plugin() {
   // ===================
   // Dropdown Options
   // ===================
-  const componentAutocompleteOptions: TextboxAutocompleteOption[] =
-    [...componentSets]
-      .filter((cs) => !cs.name.startsWith('.'))
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map((cs) => ({
-        value: cs.name,
-      }));
+  const componentAutocompleteOptions: TextboxAutocompleteOption[] = [
+    ...componentSets,
+  ]
+    .filter((cs) => !cs.name.startsWith("."))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((cs) => ({
+      value: cs.name,
+    }));
 
   const sprintDropdownOptions: DropdownOption[] = sprints.map((s) => ({
     value: s.id,
@@ -516,12 +537,24 @@ function Plugin() {
       {selectedSprintId && !isRenaming && (
         <Columns space="extraSmall">
           <Button fullWidth onClick={handleStartRename} secondary>
-            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
               <IconEdit size={16} />
             </div>
           </Button>
           <Button fullWidth onClick={handleOpenDeleteConfirm} secondary>
-            <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
               <IconTrash size={16} />
             </div>
           </Button>
@@ -563,7 +596,7 @@ function Plugin() {
       <VerticalSpace space="small" />
 
       <Button fullWidth onClick={handleFindComponentsClick}>
-        Find Components
+        Scan for new components
       </Button>
       <VerticalSpace space="small" />
 
@@ -600,11 +633,7 @@ function Plugin() {
       </Text>
       <VerticalSpace space="small" />
 
-      <Button
-        fullWidth
-        onClick={handleOpenAddNote}
-        disabled={!canAddNote}
-      >
+      <Button fullWidth onClick={handleOpenAddNote} disabled={!canAddNote}>
         + Add Note
       </Button>
       {!canAddNote && (
@@ -628,6 +657,7 @@ function Plugin() {
         <NoteCard
           key={note.id}
           note={note}
+          onView={handleViewNoteComponent}
           onEdit={handleOpenEditNote}
           onDelete={handleOpenDeleteNoteConfirm}
         />

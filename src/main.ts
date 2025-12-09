@@ -23,7 +23,8 @@ import {
   EditNoteHandler,
   EditNotePayload,
   DeleteNoteHandler,
-  DeleteNotePayload
+  DeleteNotePayload,
+  ViewComponentSetHandler
 } from './types'
 
 const PLUGIN_NAMESPACE = 'tidy_release_notes'
@@ -111,6 +112,21 @@ function getSprintsPayload(): SprintsPayload {
   }
 
   return { sprints, lastSelectedSprintId }
+}
+
+// ===================
+// Navigation Helpers
+// ===================
+
+function findParentPage(node: BaseNode): PageNode | null {
+  let current: BaseNode | null = node
+  while (current) {
+    if (current.type === 'PAGE') {
+      return current as PageNode
+    }
+    current = current.parent
+  }
+  return null
 }
 
 // ===================
@@ -277,6 +293,19 @@ export default function () {
 
     const payload = getSprintsPayload()
     emit<SprintsUpdatedHandler>('SPRINTS_UPDATED', payload)
+  })
+
+  on<ViewComponentSetHandler>('VIEW_COMPONENT_SET', function (componentSetId: string) {
+    const node = figma.getNodeById(componentSetId)
+    if (node && node.type === 'COMPONENT_SET') {
+      // Navigate to the page containing the component set
+      const page = findParentPage(node)
+      if (page && figma.currentPage !== page) {
+        figma.currentPage = page
+      }
+      // Zoom and scroll viewport to the component set
+      figma.viewport.scrollAndZoomIntoView([node])
+    }
   })
 
   showUI({

@@ -159,3 +159,9 @@ export interface DeleteNoteHandler extends EventHandler {
   name: 'DELETE_NOTE'
   handler: (payload: DeleteNotePayload) => void
 }
+
+// UI -> Main: Navigate viewport to a component set
+export interface ViewComponentSetHandler extends EventHandler {
+  name: 'VIEW_COMPONENT_SET'
+  handler: (componentSetId: string) => void
+}
