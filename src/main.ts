@@ -197,7 +197,7 @@ async function buildSprintNotesTable(sprint: Sprint, notes: ReleaseNote[]): Prom
     month: 'short',
     day: 'numeric'
   })
-  headerText.characters = `Sprint ${sprint.name} – ${formattedDate}`
+  headerText.characters = `${sprint.name} – ${formattedDate}`
   headerText.fontName = { family: 'Inter', style: 'Bold' }
 
   headerRow.appendChild(headerText)
