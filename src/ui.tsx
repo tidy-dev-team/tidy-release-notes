@@ -16,7 +16,12 @@ import {
   TextboxMultiline,
   VerticalSpace,
 } from "@create-figma-plugin/ui";
-import { IconColumns, IconEdit, IconFocus2, IconTrash } from "@tabler/icons-preact";
+import {
+  IconColumns,
+  IconEdit,
+  IconFocus2,
+  IconTrash,
+} from "@tabler/icons-preact";
 import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
 import { useCallback, useEffect, useState, useMemo } from "preact/hooks";
@@ -57,6 +62,7 @@ const TAG_OPTIONS: DropdownOption[] = [
   { value: "enhancement", text: "Enhancement" },
   { value: "new_component", text: "New component" },
   { value: "deprecation", text: "Deprecation" },
+  { value: "deleted", text: "Deleted" },
 ];
 
 const TAG_COLORS: Record<NoteTag, string> = {
@@ -64,6 +70,7 @@ const TAG_COLORS: Record<NoteTag, string> = {
   enhancement: "#0D99FF",
   new_component: "#14AE5C",
   deprecation: "#FFA629",
+  deleted: "#8B0000",
 };
 
 const TAG_LABELS: Record<NoteTag, string> = {
@@ -71,6 +78,7 @@ const TAG_LABELS: Record<NoteTag, string> = {
   enhancement: "Enhancement",
   new_component: "New component",
   deprecation: "Deprecation",
+  deleted: "Deleted",
 };
 
 // ===================
