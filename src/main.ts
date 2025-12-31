@@ -285,6 +285,7 @@ function createStatusBadge(tag: string): FrameNode {
   badge.layoutMode = "HORIZONTAL";
   badge.primaryAxisSizingMode = "AUTO";
   badge.counterAxisSizingMode = "AUTO";
+  badge.counterAxisAlignItems = "CENTER";
   badge.itemSpacing = 4;
   badge.paddingTop = 2;
   badge.paddingBottom = 2;
