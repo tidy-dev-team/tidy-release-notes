@@ -719,7 +719,6 @@ async function buildComponentReleaseNotesFrame(
     const sprintNotes = sprint.notes.filter(
       (note) => note.componentSetId === componentSet.id
     );
-    const isLastSprint = sprintIndex === sprintsWithNotes.length - 1;
 
     // Sort notes by date (newest first)
     const sortedNotes = [...sprintNotes].sort((a, b) => {
@@ -879,8 +878,8 @@ async function buildComponentReleaseNotesFrame(
         mainContent.appendChild(descSection);
       }
 
-      // Create timeline column for this sprint
-      const timelineCol = createTimelineColumn(0, isLastSprint);
+      // Create timeline column for this sprint (always show line)
+      const timelineCol = createTimelineColumn(0, false);
       logRow.appendChild(timelineCol);
       logRow.appendChild(mainContent);
 
