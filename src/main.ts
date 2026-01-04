@@ -195,38 +195,6 @@ function getOrCreateReleaseNotesFrame(page: PageNode): FrameNode {
   return frame;
 }
 
-function getOrCreateComponentReleaseNotesFrame(
-  componentSet: ComponentSetNode
-): FrameNode {
-  const page = findParentPage(componentSet);
-  if (!page) {
-    throw new Error("Component set has no parent page");
-  }
-
-  const frameName = `${componentSet.name}-release-notes`;
-  const existing = page.children.find(
-    (child) => child.type === "FRAME" && child.name === frameName
-  ) as FrameNode | undefined;
-
-  if (existing) {
-    return existing;
-  }
-
-  const frame = figma.createFrame();
-  frame.name = frameName;
-  frame.layoutMode = "VERTICAL";
-  frame.primaryAxisSizingMode = "AUTO";
-  frame.counterAxisSizingMode = "AUTO";
-  frame.itemSpacing = 20;
-  frame.paddingTop = 0;
-  frame.paddingRight = 0;
-  frame.paddingBottom = 0;
-  frame.paddingLeft = 0;
-
-  page.appendChild(frame);
-  return frame;
-}
-
 // ===================
 // Design System Colors
 // ===================
@@ -324,7 +292,7 @@ function createTimelineDiamond(): FrameNode {
   container.name = "diamond";
   container.layoutMode = "VERTICAL";
   container.primaryAxisSizingMode = "FIXED";
-  container.counterAxisSizingMode = "FIXED";
+  container.counterAxisSizingMode = "AUTO";
   container.primaryAxisAlignItems = "CENTER";
   container.counterAxisAlignItems = "CENTER";
   container.resize(11.314, 11.314);
@@ -347,14 +315,16 @@ function createTimelineColumn(height: number, isLast: boolean): FrameNode {
   timeline.layoutMode = "VERTICAL";
   timeline.primaryAxisSizingMode = "FIXED";
   timeline.counterAxisSizingMode = "AUTO";
-  timeline.primaryAxisAlignItems = "MIN";
   timeline.counterAxisAlignItems = "CENTER";
-  timeline.resize(27, height);
+  timeline.layoutSizingHorizontal = "HUG";
+  timeline.resize(27, 100);
   timeline.paddingTop = 12;
   timeline.paddingLeft = 8;
   timeline.paddingRight = 8;
+  timeline.paddingBottom = 12;
   timeline.itemSpacing = 8;
   timeline.fills = [];
+  timeline.layoutAlign = "STRETCH";
 
   const diamond = createTimelineDiamond();
   timeline.appendChild(diamond);
@@ -362,9 +332,10 @@ function createTimelineColumn(height: number, isLast: boolean): FrameNode {
   if (!isLast) {
     const line = figma.createRectangle();
     line.name = "timeline-line";
-    line.resize(1, Math.max(height - 32, 10));
+    line.resize(1, 10);
     line.fills = [{ type: "SOLID", color: COLORS.timelineLine }];
     line.layoutAlign = "CENTER";
+    line.layoutGrow = 1;
     timeline.appendChild(line);
   }
 
@@ -373,7 +344,8 @@ function createTimelineColumn(height: number, isLast: boolean): FrameNode {
 
 async function buildSprintNotesTable(
   sprint: Sprint,
-  notes: ReleaseNote[]
+  notes: ReleaseNote[],
+  includeSprintHeader: boolean = true
 ): Promise<FrameNode> {
   await figma.loadFontAsync({ family: "Inter", style: "Regular" });
   await figma.loadFontAsync({ family: "Inter", style: "Medium" });
@@ -416,28 +388,52 @@ async function buildSprintNotesTable(
   changelogSection.itemSpacing = 0;
   changelogSection.fills = [];
 
-  // Title row: "Changelog"
-  const titleRow = figma.createFrame();
-  titleRow.name = "Title";
-  titleRow.layoutMode = "HORIZONTAL";
-  titleRow.primaryAxisSizingMode = "FIXED";
-  titleRow.counterAxisSizingMode = "AUTO";
-  titleRow.layoutAlign = "STRETCH";
-  titleRow.paddingTop = 8;
-  titleRow.paddingBottom = 8;
-  titleRow.paddingLeft = 24;
-  titleRow.paddingRight = 24;
-  titleRow.fills = [];
+  // Title row: "Changelog" (only for aggregated view)
+  if (includeSprintHeader) {
+    const titleRow = figma.createFrame();
+    titleRow.name = "Title";
+    titleRow.layoutMode = "HORIZONTAL";
+    titleRow.primaryAxisSizingMode = "FIXED";
+    titleRow.counterAxisSizingMode = "AUTO";
+    titleRow.layoutAlign = "STRETCH";
+    titleRow.paddingTop = 8;
+    titleRow.paddingBottom = 8;
+    titleRow.paddingLeft = 24;
+    titleRow.paddingRight = 24;
+    titleRow.fills = [];
 
-  const titleText = figma.createText();
-  titleText.fontName = { family: "Inter", style: "Medium" };
-  titleText.fontSize = 24;
-  titleText.lineHeight = { value: 32, unit: "PIXELS" };
-  titleText.characters = "Changelog";
-  titleText.fills = [{ type: "SOLID", color: COLORS.textBold }];
+    const titleText = figma.createText();
+    titleText.fontName = { family: "Inter", style: "Medium" };
+    titleText.fontSize = 24;
+    titleText.lineHeight = { value: 32, unit: "PIXELS" };
+    titleText.characters = "Changelog";
+    titleText.fills = [{ type: "SOLID", color: COLORS.textBold }];
 
-  titleRow.appendChild(titleText);
-  changelogSection.appendChild(titleRow);
+    titleRow.appendChild(titleText);
+    changelogSection.appendChild(titleRow);
+  }
+
+  // Sprint version header (appears once per sprint, only for component pages)
+  if (!includeSprintHeader) {
+    const sprintVersionRow = figma.createFrame();
+    sprintVersionRow.name = "Sprint version";
+    sprintVersionRow.layoutMode = "HORIZONTAL";
+    sprintVersionRow.primaryAxisSizingMode = "AUTO";
+    sprintVersionRow.counterAxisSizingMode = "AUTO";
+    sprintVersionRow.paddingLeft = 24;
+    sprintVersionRow.paddingRight = 24;
+    sprintVersionRow.fills = [];
+
+    const sprintVersionText = figma.createText();
+    sprintVersionText.fontName = { family: "Inter", style: "Bold" };
+    sprintVersionText.fontSize = 16;
+    sprintVersionText.lineHeight = { value: 24, unit: "PIXELS" };
+    sprintVersionText.characters = sprint.name;
+    sprintVersionText.fills = [{ type: "SOLID", color: COLORS.textMuted }];
+
+    sprintVersionRow.appendChild(sprintVersionText);
+    changelogSection.appendChild(sprintVersionRow);
+  }
 
   // Group notes by tag for each sprint entry, sorted by date (newest first)
   const sortedNotes = [...notes].sort((a, b) => {
@@ -457,12 +453,9 @@ async function buildSprintNotesTable(
 
   const groupEntries = Array.from(noteGroups.entries());
 
-  for (let i = 0; i < groupEntries.length; i++) {
-    const [, groupNotes] = groupEntries[i];
-    const firstNote = groupNotes[0];
-    const isLast = i === groupEntries.length - 1;
-
-    // Log row container
+  // Create a single log row for all notes in this sprint
+  if (groupEntries.length > 0) {
+    // Log row container (one per sprint)
     const logRow = figma.createFrame();
     logRow.name = "Log";
     logRow.layoutMode = "HORIZONTAL";
@@ -474,7 +467,7 @@ async function buildSprintNotesTable(
     logRow.itemSpacing = 0;
     logRow.fills = [];
 
-    // Main content area
+    // Main content area (holds all note groups)
     const mainContent = figma.createFrame();
     mainContent.name = "main";
     mainContent.layoutMode = "VERTICAL";
@@ -486,118 +479,105 @@ async function buildSprintNotesTable(
     mainContent.fills = [];
     mainContent.layoutGrow = 1;
 
-    // Sprint version row
-    const sprintVersionRow = figma.createFrame();
-    sprintVersionRow.name = "Sprint version";
-    sprintVersionRow.layoutMode = "HORIZONTAL";
-    sprintVersionRow.primaryAxisSizingMode = "AUTO";
-    sprintVersionRow.counterAxisSizingMode = "AUTO";
-    sprintVersionRow.fills = [];
+    // Add all note groups to the main content
+    for (let i = 0; i < groupEntries.length; i++) {
+      const [, groupNotes] = groupEntries[i];
+      const firstNote = groupNotes[0];
 
-    const sprintVersionText = figma.createText();
-    sprintVersionText.fontName = { family: "Inter", style: "Bold" };
-    sprintVersionText.fontSize = 16;
-    sprintVersionText.lineHeight = { value: 24, unit: "PIXELS" };
-    sprintVersionText.characters = sprint.name;
-    sprintVersionText.fills = [{ type: "SOLID", color: COLORS.textMuted }];
+      // Title row with badge + author + date
+      const infoRow = figma.createFrame();
+      infoRow.name = "who + when";
+      infoRow.layoutMode = "HORIZONTAL";
+      infoRow.primaryAxisSizingMode = "AUTO";
+      infoRow.counterAxisSizingMode = "AUTO";
+      infoRow.itemSpacing = 4;
+      infoRow.fills = [];
 
-    sprintVersionRow.appendChild(sprintVersionText);
-    mainContent.appendChild(sprintVersionRow);
+      // Status badge
+      const badge = createStatusBadge(firstNote.tag);
+      infoRow.appendChild(badge);
 
-    // Title row with badge + author + date
-    const infoRow = figma.createFrame();
-    infoRow.name = "who + when";
-    infoRow.layoutMode = "HORIZONTAL";
-    infoRow.primaryAxisSizingMode = "AUTO";
-    infoRow.counterAxisSizingMode = "AUTO";
-    infoRow.itemSpacing = 4;
-    infoRow.fills = [];
+      // "By" text
+      const byText = figma.createText();
+      byText.fontName = { family: "Inter", style: "Regular" };
+      byText.fontSize = 14;
+      byText.lineHeight = { value: 24, unit: "PIXELS" };
+      byText.characters = "By";
+      byText.fills = [{ type: "SOLID", color: COLORS.textBold }];
+      infoRow.appendChild(byText);
 
-    // Status badge
-    const badge = createStatusBadge(firstNote.tag);
-    infoRow.appendChild(badge);
+      // Author name (bold)
+      const authorText = figma.createText();
+      authorText.fontName = { family: "Inter", style: "Semi Bold" };
+      authorText.fontSize = 14;
+      authorText.lineHeight = { value: 24, unit: "PIXELS" };
+      authorText.characters = firstNote.authorName;
+      authorText.fills = [{ type: "SOLID", color: COLORS.textBold }];
+      infoRow.appendChild(authorText);
 
-    // "By" text
-    const byText = figma.createText();
-    byText.fontName = { family: "Inter", style: "Regular" };
-    byText.fontSize = 14;
-    byText.lineHeight = { value: 24, unit: "PIXELS" };
-    byText.characters = "By";
-    byText.fills = [{ type: "SOLID", color: COLORS.textBold }];
-    infoRow.appendChild(byText);
+      // "on" text
+      const onText = figma.createText();
+      onText.fontName = { family: "Inter", style: "Regular" };
+      onText.fontSize = 14;
+      onText.lineHeight = { value: 24, unit: "PIXELS" };
+      onText.characters = "on";
+      onText.fills = [{ type: "SOLID", color: COLORS.textBold }];
+      infoRow.appendChild(onText);
 
-    // Author name (bold)
-    const authorText = figma.createText();
-    authorText.fontName = { family: "Inter", style: "Semi Bold" };
-    authorText.fontSize = 14;
-    authorText.lineHeight = { value: 24, unit: "PIXELS" };
-    authorText.characters = firstNote.authorName;
-    authorText.fills = [{ type: "SOLID", color: COLORS.textBold }];
-    infoRow.appendChild(authorText);
+      // Date
+      const dateText = figma.createText();
+      dateText.fontName = { family: "Inter", style: "Regular" };
+      dateText.fontSize = 14;
+      dateText.lineHeight = { value: 24, unit: "PIXELS" };
+      dateText.characters = formatNoteDate(firstNote.createdAt);
+      dateText.fills = [{ type: "SOLID", color: COLORS.textBold }];
+      infoRow.appendChild(dateText);
 
-    // "on" text
-    const onText = figma.createText();
-    onText.fontName = { family: "Inter", style: "Regular" };
-    onText.fontSize = 14;
-    onText.lineHeight = { value: 24, unit: "PIXELS" };
-    onText.characters = "on";
-    onText.fills = [{ type: "SOLID", color: COLORS.textBold }];
-    infoRow.appendChild(onText);
+      mainContent.appendChild(infoRow);
 
-    // Date
-    const dateText = figma.createText();
-    dateText.fontName = { family: "Inter", style: "Regular" };
-    dateText.fontSize = 14;
-    dateText.lineHeight = { value: 24, unit: "PIXELS" };
-    dateText.characters = formatNoteDate(firstNote.createdAt);
-    dateText.fills = [{ type: "SOLID", color: COLORS.textBold }];
-    infoRow.appendChild(dateText);
+      // Description section with bullets
+      const descSection = figma.createFrame();
+      descSection.name = "Description";
+      descSection.layoutMode = "VERTICAL";
+      descSection.primaryAxisSizingMode = "AUTO";
+      descSection.counterAxisSizingMode = "AUTO";
+      descSection.layoutAlign = "STRETCH";
+      descSection.itemSpacing = 4;
+      descSection.fills = [];
 
-    mainContent.appendChild(infoRow);
+      for (const note of groupNotes) {
+        const bulletRow = figma.createFrame();
+        bulletRow.name = "bullet-item";
+        bulletRow.layoutMode = "HORIZONTAL";
+        bulletRow.primaryAxisSizingMode = "AUTO";
+        bulletRow.counterAxisSizingMode = "AUTO";
+        bulletRow.itemSpacing = 8;
+        bulletRow.fills = [];
 
-    // Description section with bullets
-    const descSection = figma.createFrame();
-    descSection.name = "Description";
-    descSection.layoutMode = "VERTICAL";
-    descSection.primaryAxisSizingMode = "AUTO";
-    descSection.counterAxisSizingMode = "AUTO";
-    descSection.layoutAlign = "STRETCH";
-    descSection.itemSpacing = 4;
-    descSection.fills = [];
+        const bulletText = figma.createText();
+        bulletText.fontName = { family: "Inter", style: "Medium" };
+        bulletText.fontSize = 14;
+        bulletText.lineHeight = { value: 20, unit: "PIXELS" };
+        bulletText.characters = "•";
+        bulletText.fills = [{ type: "SOLID", color: COLORS.textBold }];
+        bulletRow.appendChild(bulletText);
 
-    for (const note of groupNotes) {
-      const bulletRow = figma.createFrame();
-      bulletRow.name = "bullet-item";
-      bulletRow.layoutMode = "HORIZONTAL";
-      bulletRow.primaryAxisSizingMode = "AUTO";
-      bulletRow.counterAxisSizingMode = "AUTO";
-      bulletRow.itemSpacing = 8;
-      bulletRow.fills = [];
+        const descText = figma.createText();
+        descText.fontName = { family: "Inter", style: "Medium" };
+        descText.fontSize = 14;
+        descText.lineHeight = { value: 20, unit: "PIXELS" };
+        descText.characters = note.description;
+        descText.fills = [{ type: "SOLID", color: COLORS.textBold }];
+        bulletRow.appendChild(descText);
 
-      const bulletText = figma.createText();
-      bulletText.fontName = { family: "Inter", style: "Medium" };
-      bulletText.fontSize = 14;
-      bulletText.lineHeight = { value: 20, unit: "PIXELS" };
-      bulletText.characters = "•";
-      bulletText.fills = [{ type: "SOLID", color: COLORS.textBold }];
-      bulletRow.appendChild(bulletText);
+        descSection.appendChild(bulletRow);
+      }
 
-      const descText = figma.createText();
-      descText.fontName = { family: "Inter", style: "Medium" };
-      descText.fontSize = 14;
-      descText.lineHeight = { value: 20, unit: "PIXELS" };
-      descText.characters = note.description;
-      descText.fills = [{ type: "SOLID", color: COLORS.textBold }];
-      bulletRow.appendChild(descText);
-
-      descSection.appendChild(bulletRow);
+      mainContent.appendChild(descSection);
     }
 
-    mainContent.appendChild(descSection);
-
-    // Create timeline column first, then add mainContent
-    const estimatedHeight = 116; // Use fixed height as per design
-    const timelineCol = createTimelineColumn(estimatedHeight, isLast);
+    // Create timeline column that spans all notes
+    const timelineCol = createTimelineColumn(0, false);
     logRow.appendChild(timelineCol);
     logRow.appendChild(mainContent);
 
@@ -630,6 +610,62 @@ async function buildSprintNotesTable(
   container.appendChild(logoSection);
 
   return container;
+}
+
+async function buildComponentReleaseNotesFrame(
+  componentSet: ComponentSetNode,
+  sprints: Sprint[]
+): Promise<FrameNode | null> {
+  const page = findParentPage(componentSet);
+  if (!page) {
+    console.warn(
+      `Component set "${componentSet.name}" has no parent page, skipping.`
+    );
+    return null;
+  }
+
+  const frameName = `${componentSet.name}-release-notes`;
+  // Remove old frame if it exists
+  const existing = page.children.find(
+    (child) => child.type === "FRAME" && child.name === frameName
+  ) as FrameNode | undefined;
+
+  if (existing) {
+    existing.remove();
+  }
+
+  // Create parent frame to hold all sprints
+  const parentFrame = figma.createFrame();
+  parentFrame.name = frameName;
+  parentFrame.layoutMode = "VERTICAL";
+  parentFrame.primaryAxisSizingMode = "AUTO";
+  parentFrame.counterAxisSizingMode = "AUTO";
+  parentFrame.itemSpacing = 20;
+  parentFrame.paddingTop = 0;
+  parentFrame.paddingRight = 0;
+  parentFrame.paddingBottom = 0;
+  parentFrame.paddingLeft = 0;
+  parentFrame.fills = [];
+
+  page.appendChild(parentFrame);
+
+  // Get all sprints with notes for this component set, sorted by creation (newer first)
+  const sprintsWithNotes = sprints
+    .filter((sprint) =>
+      sprint.notes.some((note) => note.componentSetId === componentSet.id)
+    )
+    .sort((a, b) => parseInt(b.id) - parseInt(a.id)); // Newer sprints first (by ID as timestamp)
+
+  // Build table for each sprint
+  for (const sprint of sprintsWithNotes) {
+    const sprintNotes = sprint.notes.filter(
+      (note) => note.componentSetId === componentSet.id
+    );
+    const table = await buildSprintNotesTable(sprint, sprintNotes, false);
+    parentFrame.appendChild(table);
+  }
+
+  return parentFrame;
 }
 
 // ===================
@@ -837,7 +873,7 @@ export default function () {
       const page = getOrCreateReleaseNotesPage();
       const frame = getOrCreateReleaseNotesFrame(page);
 
-      const table = await buildSprintNotesTable(sprint, sprint.notes);
+      const table = await buildSprintNotesTable(sprint, sprint.notes, true);
 
       if (frame.children.length === 0) {
         frame.appendChild(table);
@@ -845,7 +881,7 @@ export default function () {
         frame.insertChild(0, table);
       }
 
-      // Build per-component tables in the background
+      // Build per-component frames in the background
       const notesByComponentSet = new Map<string, ReleaseNote[]>();
       for (const note of sprint.notes) {
         const existing = notesByComponentSet.get(note.componentSetId) || [];
@@ -855,26 +891,23 @@ export default function () {
 
       for (const entry of Array.from(notesByComponentSet.entries())) {
         const componentSetId = entry[0];
-        const notes = entry[1];
         const node = figma.getNodeById(componentSetId);
         if (!node || node.type !== "COMPONENT_SET") {
           continue;
         }
 
         const componentSet = node as ComponentSetNode;
-        const componentFrame =
-          getOrCreateComponentReleaseNotesFrame(componentSet);
-        const componentTable = await buildSprintNotesTable(sprint, notes);
+        const componentFrame = await buildComponentReleaseNotesFrame(
+          componentSet,
+          sprints
+        );
 
-        if (componentFrame.children.length === 0) {
-          componentFrame.appendChild(componentTable);
-        } else {
-          componentFrame.insertChild(0, componentTable);
+        // Only position if frame was successfully created
+        if (componentFrame) {
+          // Position the frame to the left of the component set, aligned by top, with 100px gap
+          componentFrame.x = componentSet.x - componentFrame.width - 100;
+          componentFrame.y = componentSet.y;
         }
-
-        // Position the frame to the left of the component set, aligned by top, with 100px gap
-        componentFrame.x = componentSet.x - componentFrame.width - 100;
-        componentFrame.y = componentSet.y;
       }
 
       // Only navigate to the aggregated table
