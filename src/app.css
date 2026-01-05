@@ -98,3 +98,24 @@ button[tip-align*=right]::after {
   margin-bottom: 8px;
   width: fit-content;
 }
+
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  padding: 4px 0;
+}
+
+button.secondary {
+  border: none !important;
+  width: 32px;
+  height: 32px;
+}
+
+div:has(.sticky-header) {
+  isolation: isolate;
+}

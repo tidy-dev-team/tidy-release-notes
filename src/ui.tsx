@@ -22,6 +22,7 @@ import {
   IconEraser,
   IconFocus2,
   IconTrash,
+  IconPlus,
 } from "@tabler/icons-preact";
 import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
@@ -689,14 +690,24 @@ function Plugin() {
       <VerticalSpace space="large" />
 
       {/* Release Notes Section */}
-      <Text>
-        <Bold>Release Notes</Bold>
-      </Text>
-      <VerticalSpace space="small" />
+      <div className={"sticky-header"}>
+        <Text>
+          <Bold>Release Notes</Bold>
+        </Text>
+        <VerticalSpace space="small" />
 
-      <Button fullWidth onClick={handleOpenAddNote} disabled={!canAddNote}>
-        + Add Note
-      </Button>
+        <Button
+          className="secondary"
+          tool-tip="Add new note"
+          tip-align="right"
+          secondary
+          fullWidth
+          onClick={handleOpenAddNote}
+          disabled={!canAddNote}
+        >
+          <IconPlus size={16} />
+        </Button>
+      </div>
       {!canAddNote && (
         <div>
           <VerticalSpace space="small" />
