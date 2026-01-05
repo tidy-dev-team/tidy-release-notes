@@ -19,6 +19,7 @@ import {
 import {
   IconColumns,
   IconEdit,
+  IconEraser,
   IconFocus2,
   IconTrash,
 } from "@tabler/icons-preact";
@@ -28,6 +29,7 @@ import { useCallback, useEffect, useState, useMemo } from "preact/hooks";
 
 import {
   AddNoteHandler,
+  ClearReleaseNotesFromCanvasHandler,
   ComponentSetInfo,
   ComponentSetsFoundHandler,
   ComponentSetsLoadedHandler,
@@ -41,6 +43,7 @@ import {
   LoadSprintsHandler,
   NoteTag,
   ReleaseNote,
+  ReleaseNotesFromCanvasClearedHandler,
   RenameSprintHandler,
   SelectComponentSetHandler,
   SelectSprintHandler,
@@ -226,6 +229,7 @@ function Plugin() {
     useState<string | null>(null);
   const [isPublishingSprintNotes, setIsPublishingSprintNotes] =
     useState<boolean>(false);
+  const [isClearingCanvas, setIsClearingCanvas] = useState<boolean>(false);
 
   // ===================
   // Derived State
@@ -288,6 +292,13 @@ function Plugin() {
       "SPRINT_RELEASE_NOTES_PUBLISHED",
       () => {
         setIsPublishingSprintNotes(false);
+      }
+    );
+
+    on<ReleaseNotesFromCanvasClearedHandler>(
+      "RELEASE_NOTES_FROM_CANVAS_CLEARED",
+      () => {
+        setIsClearingCanvas(false);
       }
     );
 
@@ -393,6 +404,11 @@ function Plugin() {
       selectedSprintId
     );
   }, [selectedSprintId]);
+
+  const handleClearCanvasNotes = useCallback(() => {
+    setIsClearingCanvas(true);
+    emit<ClearReleaseNotesFromCanvasHandler>("CLEAR_RELEASE_NOTES_FROM_CANVAS");
+  }, []);
 
   const handleConfirmDelete = useCallback(() => {
     if (selectedSprintId) {
@@ -603,6 +619,22 @@ function Plugin() {
               }}
             >
               <IconTrash size={16} />
+            </div>
+          </Button>
+          <Button
+            fullWidth
+            onClick={handleClearCanvasNotes}
+            secondary
+            disabled={isClearingCanvas}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
+              <IconEraser size={16} />
             </div>
           </Button>
         </Columns>

@@ -27,6 +27,8 @@ import {
   ViewComponentSetHandler,
   PublishSprintReleaseNotesHandler,
   SprintReleaseNotesPublishedHandler,
+  ClearReleaseNotesFromCanvasHandler,
+  ReleaseNotesFromCanvasClearedHandler,
 } from "./types";
 
 const PLUGIN_NAMESPACE = "tidy_release_notes";
@@ -1455,6 +1457,55 @@ export default function () {
 
       emit<SprintReleaseNotesPublishedHandler>(
         "SPRINT_RELEASE_NOTES_PUBLISHED"
+      );
+    }
+  );
+
+  // ===================
+  // Clear Canvas Handler
+  // ===================
+  on<ClearReleaseNotesFromCanvasHandler>(
+    "CLEAR_RELEASE_NOTES_FROM_CANVAS",
+    function () {
+      let removedCount = 0;
+
+      // Iterate through all pages
+      for (const page of figma.root.children) {
+        if (page.type !== "PAGE") continue;
+
+        // Find and remove component release notes frames (ending with -release-notes)
+        const framesToRemove: FrameNode[] = [];
+        for (const child of page.children) {
+          if (child.type === "FRAME" && child.name.endsWith("-release-notes")) {
+            framesToRemove.push(child);
+          }
+        }
+
+        for (const frame of framesToRemove) {
+          frame.remove();
+          removedCount++;
+        }
+
+        // If this is the Release notes page, clear the release-notes-frame contents
+        if (page.name === "Release notes") {
+          const releaseNotesFrame = page.children.find(
+            (child) =>
+              child.type === "FRAME" && child.name === "release-notes-frame"
+          ) as FrameNode | undefined;
+
+          if (releaseNotesFrame) {
+            while (releaseNotesFrame.children.length > 0) {
+              releaseNotesFrame.children[0].remove();
+              removedCount++;
+            }
+          }
+        }
+      }
+
+      console.log(`Cleared ${removedCount} release notes frame(s) from canvas`);
+
+      emit<ReleaseNotesFromCanvasClearedHandler>(
+        "RELEASE_NOTES_FROM_CANVAS_CLEARED"
       );
     }
   );
