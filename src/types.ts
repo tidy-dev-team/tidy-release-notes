@@ -182,3 +182,15 @@ export interface SprintReleaseNotesPublishedHandler extends EventHandler {
   name: "SPRINT_RELEASE_NOTES_PUBLISHED";
   handler: () => void;
 }
+
+// UI -> Main: Clear all release notes from canvas (keep data)
+export interface ClearReleaseNotesFromCanvasHandler extends EventHandler {
+  name: "CLEAR_RELEASE_NOTES_FROM_CANVAS";
+  handler: () => void;
+}
+
+// Main -> UI: Release notes cleared from canvas
+export interface ReleaseNotesFromCanvasClearedHandler extends EventHandler {
+  name: "RELEASE_NOTES_FROM_CANVAS_CLEARED";
+  handler: () => void;
+}
