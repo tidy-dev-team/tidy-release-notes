@@ -1,5 +1,100 @@
+:root {
+  /* colors */
+  --primary-color: #2563eb;
+  --primary-alpha: #2463eb1a;
+  --primary-hover: #1d4ed8;
+  --light-color: #ffffff;
+  --light-hover: #d1d5db;
+  --border-light: #e5e7eb;
+  --disabled-color: #9ca3af;
+  --panel-color: #fafafa;
+  /*
+  spacings */
+  --pixel-1: 1px;
+  --pixel-2: 2px;
+  --pixel-4: 4px;
+  --pixel-6: 6px;
+  --pixel-8: 8px;
+  --pixel-12: 12px;
+  --pixel-16: 16px;
+  --pixel-20: 20px;
+  --pixel-24: 24px;
+  --pixel-32: 32px;
+  --pixel-40: 40px;
+}
+
 .button-flex {
   display: flex !important;
   justify-content: center;
   align-items: center;
+}
+
+button[tool-tip] {
+  position: relative;
+  cursor: pointer;
+  overflow: visible;
+}
+
+button[tool-tip]:hover {
+  opacity: 1 !important;
+  background-color: var(--border-light) !important;
+}
+
+button[tool-tip]::after {
+  content: attr(tool-tip) !important;
+  font-size: 12px !important;
+  position: absolute;
+  background-color: #333333 !important;
+  color: var(--light-color);
+  padding: var(--pixel-8) var(--pixel-16);
+  border-radius: var(--pixel-8);
+  top: calc(100% + 4px);
+  right: 50%;
+  transform: translateX(50%);
+  white-space: nowrap;
+  z-index: 10;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 100ms linear 0s;
+}
+
+button[tool-tip]:hover::after {
+  opacity: 1;
+  transition-delay: 1000ms;
+}
+
+button[tip-align*=left]::after {
+  right: unset;
+  left: 0;
+  transform: translateX(0);
+}
+
+button[tip-align*=right]::after {
+  right: 0;
+  transform: translateX(0);
+}
+
+.card-flex {
+  display: flex;
+  gap: 4px;
+  flex-direction: column;
+  border: 1px solid var(--figma-color-border);
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.card-flex:first-child {
+  width: fit-content !important;
+}
+
+.tag {
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  width: fit-content;
 }

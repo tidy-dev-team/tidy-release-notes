@@ -17,7 +17,7 @@ import {
   VerticalSpace,
 } from "@create-figma-plugin/ui";
 import {
-  IconColumns,
+  IconBlocks,
   IconEdit,
   IconFocus2,
   IconTrash,
@@ -116,25 +116,12 @@ function NoteCard({ note, onView, onEdit, onDelete }: NoteCardProps) {
   const tagLabel = TAG_LABELS[note.tag];
 
   return (
-    <div
-      style={{
-        border: "1px solid var(--figma-color-border)",
-        borderRadius: "4px",
-        padding: "12px",
-        marginBottom: "8px",
-      }}
-    >
+    <div className={"card-flex"}>
       {/* Tag Badge */}
       <div
+        className={"tag"}
         style={{
-          display: "inline-block",
           backgroundColor: tagColor,
-          color: "white",
-          padding: "2px 8px",
-          borderRadius: "4px",
-          fontSize: "11px",
-          fontWeight: "bold",
-          marginBottom: "8px",
         }}
       >
         {tagLabel}
@@ -163,9 +150,10 @@ function NoteCard({ note, onView, onEdit, onDelete }: NoteCardProps) {
       </div>
 
       {/* Actions */}
-      <Columns space="extraSmall">
+      <Columns space="extraSmall" style={{ paddingTop: "8px" }}>
         <Button
           className={"button-flex"}
+          tool-tip="View note"
           fullWidth
           onClick={() => onView(note)}
           secondary
@@ -174,6 +162,7 @@ function NoteCard({ note, onView, onEdit, onDelete }: NoteCardProps) {
         </Button>
         <Button
           className={"button-flex"}
+          tool-tip="Edit note"
           fullWidth
           onClick={() => onEdit(note)}
           secondary
@@ -182,6 +171,7 @@ function NoteCard({ note, onView, onEdit, onDelete }: NoteCardProps) {
         </Button>
         <Button
           className={"button-flex"}
+          tool-tip="Delete note"
           fullWidth
           onClick={() => onDelete(note.id)}
           secondary
@@ -575,15 +565,18 @@ function Plugin() {
         <Columns space="extraSmall">
           <Button
             className={"button-flex"}
+            tool-tip="Publish notes to canvas"
+            tip-align="left"
             fullWidth
             onClick={handlePublishSprintNotes}
             secondary
             disabled={isPublishingSprintNotes}
           >
-            <IconColumns size={16} />
+            <IconBlocks size={16} />
           </Button>
           <Button
             className={"button-flex"}
+            tool-tip="Rename sprint"
             fullWidth
             onClick={handleStartRename}
             secondary
@@ -592,6 +585,7 @@ function Plugin() {
           </Button>
           <Button
             className={"button-flex"}
+            tool-tip="Delete sprint"
             fullWidth
             onClick={handleOpenDeleteConfirm}
             secondary
