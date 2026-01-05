@@ -556,7 +556,11 @@ function Plugin() {
           placeholder="New sprint name"
           value={newSprintName}
         />
-        <Button onClick={handleCreateSprint} disabled={!newSprintName.trim()}>
+        <Button
+          className={"fill-button"}
+          onClick={handleCreateSprint}
+          disabled={!newSprintName.trim()}
+        >
           Create
         </Button>
       </Columns>

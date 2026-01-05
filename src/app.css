@@ -29,9 +29,12 @@
   align-items: center;
 }
 
+button {
+  cursor: pointer;
+}
+
 button[tool-tip] {
   position: relative;
-  cursor: pointer;
   overflow: visible;
 }
 
@@ -118,4 +121,8 @@ button.secondary {
 
 div:has(.sticky-header) {
   isolation: isolate;
+}
+
+.fill-button, div:has(.fill-button):not(div:has(div button)) {
+  width: 100%;
 }
