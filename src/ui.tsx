@@ -23,6 +23,7 @@ import {
   IconFocus2,
   IconTrash,
   IconPlus,
+  IconRefresh,
 } from "@tabler/icons-preact";
 import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
@@ -656,14 +657,23 @@ function Plugin() {
       <VerticalSpace space="large" />
 
       {/* Component Sets Section */}
-      <Text>
-        <Bold>Component Sets</Bold>
-      </Text>
-      <VerticalSpace space="small" />
+      <div className={"header"}>
+        <Text>
+          <Bold>Component Sets</Bold>
+        </Text>
+        <VerticalSpace space="small" />
 
-      <Button fullWidth onClick={handleFindComponentsClick} secondary>
-        Scan for new components
-      </Button>
+        <Button
+          className="secondary"
+          tool-tip="Scan for new components"
+          tip-align="right"
+          secondary
+          fullWidth
+          onClick={handleFindComponentsClick}
+        >
+          <IconRefresh size={16} />
+        </Button>
+      </div>
       <VerticalSpace space="small" />
 
       {componentSets.length > 0 && (
@@ -694,7 +704,7 @@ function Plugin() {
       <VerticalSpace space="large" />
 
       {/* Release Notes Section */}
-      <div className={"sticky-header"}>
+      <div className={"sticky-header header"}>
         <Text>
           <Bold>Release Notes</Bold>
         </Text>
@@ -777,7 +787,7 @@ function Plugin() {
         open={isNoteModalOpen}
         title={editingNote ? "Edit Note" : "Add Note"}
       >
-        <div style={{ padding: "16px" }}>
+        <div style={{ padding: "12px" }}>
           <Text>
             <Bold>Description</Bold>
           </Text>

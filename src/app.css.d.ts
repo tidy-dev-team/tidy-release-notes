@@ -2,6 +2,7 @@ declare const styles: {
   readonly "button-flex": string;
   readonly "card-flex": string;
   readonly "fill-button": string;
+  readonly "header": string;
   readonly "secondary": string;
   readonly "sticky-header": string;
   readonly "tag": string;

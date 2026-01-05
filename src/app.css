@@ -103,14 +103,19 @@ button[tip-align*=right]::after {
 }
 
 .sticky-header {
-  position: sticky;
+  position: sticky !important;
   top: 0;
-  z-index: 9;
+  z-index: 9 !important;
+}
+
+.header {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: #ffffff;
   padding: 4px 0;
+  z-index: 10;
 }
 
 button.secondary {
@@ -119,10 +124,21 @@ button.secondary {
   height: 32px;
 }
 
-div:has(.sticky-header) {
+div:has(.header) {
   isolation: isolate;
 }
 
 .fill-button, div:has(.fill-button):not(div:has(div button)) {
   width: 100%;
+}
+
+div[class*=_textbox_]:has(div[class*=_menu_]):not(div[class*=_textbox_]:has(div[class*=_hidden_])) ~ .sticky-header {
+  opacity: 0;
+}
+
+div[class*=_modal_] {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 0px;
+  width: 280px;
 }
