@@ -156,7 +156,7 @@ function NoteCard({ note, onView, onEdit, onDelete }: NoteCardProps) {
       <Columns space="extraSmall" style={{ paddingTop: "8px" }}>
         <Button
           className={"button-flex"}
-          tool-tip="View note"
+          tool-tip="View component"
           fullWidth
           onClick={() => onView(note)}
           secondary
@@ -609,20 +609,15 @@ function Plugin() {
             <IconTrash size={16} />
           </Button>
           <Button
+            className={"button-flex"}
+            tool-tip="Unpublish notes from canvas"
+            tip-align="right"
             fullWidth
             onClick={handleClearCanvasNotes}
             secondary
             disabled={isClearingCanvas}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                width: "100%",
-              }}
-            >
-              <IconEraser size={16} />
-            </div>
+            <IconEraser size={16} />
           </Button>
         </Columns>
       )}
