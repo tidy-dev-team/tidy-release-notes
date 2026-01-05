@@ -25,6 +25,7 @@ import {
 import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
 import { useCallback, useEffect, useState, useMemo } from "preact/hooks";
+import "!./app.css";
 
 import {
   AddNoteHandler,
@@ -163,26 +164,29 @@ function NoteCard({ note, onView, onEdit, onDelete }: NoteCardProps) {
 
       {/* Actions */}
       <Columns space="extraSmall">
-        <Button fullWidth onClick={() => onView(note)} secondary>
-          <div
-            style={{ display: "flex", justifyContent: "center", width: "100%" }}
-          >
-            <IconFocus2 size={16} />
-          </div>
+        <Button
+          className={"button-flex"}
+          fullWidth
+          onClick={() => onView(note)}
+          secondary
+        >
+          <IconFocus2 size={16} />
         </Button>
-        <Button fullWidth onClick={() => onEdit(note)} secondary>
-          <div
-            style={{ display: "flex", justifyContent: "center", width: "100%" }}
-          >
-            <IconEdit size={16} />
-          </div>
+        <Button
+          className={"button-flex"}
+          fullWidth
+          onClick={() => onEdit(note)}
+          secondary
+        >
+          <IconEdit size={16} />
         </Button>
-        <Button fullWidth onClick={() => onDelete(note.id)} secondary>
-          <div
-            style={{ display: "flex", justifyContent: "center", width: "100%" }}
-          >
-            <IconTrash size={16} />
-          </div>
+        <Button
+          className={"button-flex"}
+          fullWidth
+          onClick={() => onDelete(note.id)}
+          secondary
+        >
+          <IconTrash size={16} />
         </Button>
       </Columns>
     </div>
@@ -198,8 +202,9 @@ function Plugin() {
   // Component Sets State
   // ===================
   const [componentSets, setComponentSets] = useState<ComponentSetInfo[]>([]);
-  const [selectedComponentId, setSelectedComponentId] =
-    useState<string | null>(null);
+  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(
+    null
+  );
   const [componentSearchValue, setComponentSearchValue] = useState<string>("");
 
   // ===================
@@ -222,8 +227,9 @@ function Plugin() {
   const [noteTag, setNoteTag] = useState<NoteTag>("enhancement");
   const [isDeleteNoteConfirmOpen, setIsDeleteNoteConfirmOpen] =
     useState<boolean>(false);
-  const [pendingDeleteNoteId, setPendingDeleteNoteId] =
-    useState<string | null>(null);
+  const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(
+    null
+  );
   const [isPublishingSprintNotes, setIsPublishingSprintNotes] =
     useState<boolean>(false);
 
@@ -568,42 +574,29 @@ function Plugin() {
       {selectedSprintId && !isRenaming && (
         <Columns space="extraSmall">
           <Button
+            className={"button-flex"}
             fullWidth
             onClick={handlePublishSprintNotes}
             secondary
             disabled={isPublishingSprintNotes}
           >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                width: "100%",
-              }}
-            >
-              <IconColumns size={16} />
-            </div>
+            <IconColumns size={16} />
           </Button>
-          <Button fullWidth onClick={handleStartRename} secondary>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                width: "100%",
-              }}
-            >
-              <IconEdit size={16} />
-            </div>
+          <Button
+            className={"button-flex"}
+            fullWidth
+            onClick={handleStartRename}
+            secondary
+          >
+            <IconEdit size={16} />
           </Button>
-          <Button fullWidth onClick={handleOpenDeleteConfirm} secondary>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                width: "100%",
-              }}
-            >
-              <IconTrash size={16} />
-            </div>
+          <Button
+            className={"button-flex"}
+            fullWidth
+            onClick={handleOpenDeleteConfirm}
+            secondary
+          >
+            <IconTrash size={16} />
           </Button>
         </Columns>
       )}
