@@ -133,7 +133,7 @@ div:has(.header) {
 }
 
 div[class*=_textbox_]:has(div[class*=_menu_]):not(div[class*=_textbox_]:has(div[class*=_hidden_])) ~ .sticky-header {
-  opacity: 0;
+  visibility: hidden;
 }
 
 div[class*=_modal_] {
