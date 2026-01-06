@@ -1217,7 +1217,14 @@ export default function () {
   // Component Sets Handlers
   // ===================
 
-  on<FindComponentSetsHandler>("FIND_COMPONENT_SETS", function () {
+  on<FindComponentSetsHandler>("FIND_COMPONENT_SETS", async function () {
+    const scanningNotification = figma.notify("Scanning...", {
+      timeout: Infinity,
+    });
+
+    // Allow the notification to render before the synchronous scan blocks the thread
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
     const componentSetNodes = figma.root.findAllWithCriteria({
       types: ["COMPONENT_SET"],
     });
@@ -1235,6 +1242,8 @@ export default function () {
 
     const payload = getComponentSetsPayload(componentSets);
     emit<ComponentSetsFoundHandler>("COMPONENT_SETS_FOUND", payload);
+
+    scanningNotification.cancel();
   });
 
   on<LoadComponentSetsHandler>("LOAD_COMPONENT_SETS", function () {
