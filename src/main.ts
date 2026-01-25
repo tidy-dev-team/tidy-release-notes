@@ -623,6 +623,17 @@ function getComponentSetName(componentSetId: string): string {
   return "Unknown Component";
 }
 
+// Helper to generate a Figma node link URL
+function getNodeLink(nodeId: string): string {
+  const fileKey = figma.fileKey;
+  if (!fileKey) {
+    return "";
+  }
+  // Use the raw node ID and let the URL encoder handle the colon
+  const encodedNodeId = encodeURIComponent(nodeId);
+  return `https://www.figma.com/file/${fileKey}?node-id=${encodedNodeId}`;
+}
+
 async function buildAggregatedReleaseNotesTable(
   sprints: Sprint[]
 ): Promise<FrameNode> {
@@ -855,15 +866,40 @@ async function buildAggregatedReleaseNotesTable(
         noteRow.itemSpacing = 4;
         noteRow.fills = [];
 
-        // Bullet + component name (bold)
+        // Bullet
+        const bulletText = figma.createText();
+        bulletText.fontName = { family: "Inter", style: "Semi Bold" };
+        bulletText.fontSize = 14;
+        bulletText.lineHeight = { value: 24, unit: "PIXELS" };
+        bulletText.characters = "•";
+        bulletText.fills = [{ type: "SOLID", color: COLORS.textBold }];
+        noteRow.appendChild(bulletText);
+
+        // Component name (bold, with hyperlink)
+        const componentName = getComponentSetName(note.componentSetId);
         const componentText = figma.createText();
         componentText.fontName = { family: "Inter", style: "Semi Bold" };
         componentText.fontSize = 14;
         componentText.lineHeight = { value: 24, unit: "PIXELS" };
-        componentText.characters = `• ${getComponentSetName(
-          note.componentSetId
-        )}:`;
+        componentText.characters = `${componentName}:`;
         componentText.fills = [{ type: "SOLID", color: COLORS.textBold }];
+
+        // Apply hyperlink to component name (excluding the colon)
+        if (note.componentSetId) {
+          // Prefer a Node hyperlink (works within the same file and doesn't need fileKey)
+          componentText.setRangeHyperlink(0, componentName.length, {
+            type: "NODE",
+            value: note.componentSetId,
+          });
+        } else {
+          const nodeLink = getNodeLink(note.componentSetId);
+          if (nodeLink) {
+            componentText.setRangeHyperlink(0, componentName.length, {
+              type: "URL",
+              value: nodeLink,
+            });
+          }
+        }
         noteRow.appendChild(componentText);
 
         // Note description (regular)
