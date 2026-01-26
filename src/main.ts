@@ -1587,28 +1587,41 @@ export default function () {
           return;
         }
 
-        // Clear existing sprints
-        const existingKeys =
-          figma.root.getSharedPluginDataKeys(PLUGIN_NAMESPACE);
-        for (const key of existingKeys) {
-          if (key.startsWith(SPRINT_KEY_PREFIX)) {
-            figma.root.setSharedPluginData(PLUGIN_NAMESPACE, key, "");
+        const importedSprints = data.sprints.filter(
+          (sprint) => sprint.id && sprint.name && Array.isArray(sprint.notes)
+        );
+
+        // Load existing and merge (dedupe by id, keep existing when conflict)
+        const existingSprints = loadAllSprints();
+        const mergedMap = new Map<string, Sprint>();
+        for (const sprint of existingSprints) {
+          mergedMap.set(sprint.id, sprint);
+        }
+
+        const newlyAdded: Sprint[] = [];
+        for (const sprint of importedSprints) {
+          if (!mergedMap.has(sprint.id)) {
+            mergedMap.set(sprint.id, sprint);
+            newlyAdded.push(sprint);
           }
         }
 
-        // Import new sprints
-        for (const sprint of data.sprints) {
-          if (sprint.id && sprint.name && Array.isArray(sprint.notes)) {
-            saveSprint(sprint);
-          }
+        const mergedSprints = Array.from(mergedMap.values());
+
+        // Persist merged sprints
+        for (const sprint of mergedSprints) {
+          saveSprint(sprint);
         }
 
-        // Update last selected sprint if we have any
-        if (data.sprints.length > 0) {
-          setLastSprintId(data.sprints[0].id);
-        } else {
-          setLastSprintId(null);
+        // Decide selection: keep current if valid, else newest imported, else first available
+        let targetSprintId = getLastSprintId();
+        if (!targetSprintId || !mergedMap.has(targetSprintId)) {
+          const newestImported = newlyAdded
+            .slice()
+            .sort((a, b) => parseInt(b.id) - parseInt(a.id))[0];
+          targetSprintId = newestImported?.id ?? mergedSprints[0]?.id ?? null;
         }
+        setLastSprintId(targetSprintId);
 
         // Notify UI of update
         const payload = getSprintsPayload();
@@ -1617,7 +1630,7 @@ export default function () {
         emit<ReleaseNotesImportedHandler>(
           "RELEASE_NOTES_IMPORTED",
           true,
-          `Successfully imported ${data.sprints.length} sprint(s)`
+          `Imported ${newlyAdded.length} new sprint(s)`
         );
       } catch (error) {
         emit<ReleaseNotesImportedHandler>(

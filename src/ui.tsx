@@ -710,7 +710,7 @@ function Plugin() {
       <VerticalSpace space="extraSmall" />
 
       {/* Export/Import Buttons */}
-      {sprints.length > 0 && !isRenaming && (
+      {!isRenaming && (
         <Columns space="extraSmall">
           <Button
             className={"button-flex"}
@@ -719,7 +719,7 @@ function Plugin() {
             fullWidth
             onClick={handleExportReleaseNotes}
             secondary
-            disabled={isExporting}
+            disabled={isExporting || sprints.length === 0}
           >
             <IconDownload size={16} />
           </Button>
