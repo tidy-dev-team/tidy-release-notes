@@ -17,7 +17,6 @@ import {
   VerticalSpace,
 } from "@create-figma-plugin/ui";
 import {
-  IconBlocks,
   IconEdit,
   IconEraser,
   IconFocus2,
@@ -26,6 +25,7 @@ import {
   IconRefresh,
   IconDownload,
   IconUpload,
+  IconRocket,
 } from "@tabler/icons-preact";
 import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
@@ -730,7 +730,7 @@ function Plugin() {
                 secondary
                 disabled={isPublishingSprintNotes}
               >
-                <IconBlocks size={16} />
+                <IconRocket size={16} color="#0D99FF" />
               </Button>
               <Button
                 className={"button-flex"}
