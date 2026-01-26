@@ -1490,9 +1490,9 @@ export default function () {
 
         // Only position if frame was successfully created
         if (componentFrame) {
-          // Position the frame to the left of the component set, aligned by top, with 100px gap
-          componentFrame.x = componentSet.x - componentFrame.width - 100;
-          componentFrame.y = componentSet.y;
+          // Place all component release notes frames at a fixed position
+          componentFrame.x = 0;
+          componentFrame.y = 300;
         }
       }
 
