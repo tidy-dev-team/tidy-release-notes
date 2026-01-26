@@ -662,79 +662,90 @@ function Plugin() {
       )}
       <VerticalSpace space="small" />
 
-      {/* Sprint Action Buttons */}
-      {selectedSprintId && !isRenaming && (
-        <Columns space="extraSmall">
-          <Button
-            className={"button-flex"}
-            tool-tip="Publish notes to canvas"
-            tip-align="left"
-            fullWidth
-            onClick={handlePublishSprintNotes}
-            secondary
-            disabled={isPublishingSprintNotes}
-          >
-            <IconBlocks size={16} />
-          </Button>
-          <Button
-            className={"button-flex"}
-            tool-tip="Rename sprint"
-            fullWidth
-            onClick={handleStartRename}
-            secondary
-          >
-            <IconEdit size={16} />
-          </Button>
-          <Button
-            className={"button-flex"}
-            tool-tip="Delete sprint"
-            fullWidth
-            onClick={handleOpenDeleteConfirm}
-            secondary
-          >
-            <IconTrash size={16} />
-          </Button>
-          <Button
-            className={"button-flex"}
-            tool-tip="Unpublish notes from canvas"
-            tip-align="right"
-            fullWidth
-            onClick={handleClearCanvasNotes}
-            secondary
-            disabled={isClearingCanvas}
-          >
-            <IconEraser size={16} />
-          </Button>
-        </Columns>
-      )}
-      <VerticalSpace space="extraSmall" />
-
-      {/* Export/Import Buttons */}
+      {/* Sprint Action Buttons: three rows */}
       {!isRenaming && (
-        <Columns space="extraSmall">
-          <Button
-            className={"button-flex"}
-            tool-tip="Export release notes data"
-            tip-align="left"
-            fullWidth
-            onClick={handleExportReleaseNotes}
-            secondary
-            disabled={isExporting || sprints.length === 0}
-          >
-            <IconDownload size={16} />
-          </Button>
-          <Button
-            className={"button-flex"}
-            tool-tip="Import release notes data"
-            tip-align="right"
-            fullWidth
-            onClick={handleImportReleaseNotes}
-            secondary
-            disabled={isImporting}
-          >
-            <IconUpload size={16} />
-          </Button>
-        </Columns>
+        <div>
+          {selectedSprintId && (
+            <Columns space="extraSmall">
+              <Button
+                className={"button-flex"}
+                tool-tip="Rename sprint"
+                tip-align="left"
+                fullWidth
+                onClick={handleStartRename}
+                secondary
+              >
+                <IconEdit size={16} />
+              </Button>
+              <Button
+                className={"button-flex"}
+                tool-tip="Delete sprint"
+                tip-align="right"
+                fullWidth
+                onClick={handleOpenDeleteConfirm}
+                secondary
+              >
+                <IconTrash size={16} />
+              </Button>
+            </Columns>
+          )}
+
+          <VerticalSpace space="extraSmall" />
+
+          <Columns space="extraSmall">
+            <Button
+              className={"button-flex"}
+              tool-tip="Export release notes data"
+              tip-align="left"
+              fullWidth
+              onClick={handleExportReleaseNotes}
+              secondary
+              disabled={isExporting || sprints.length === 0}
+            >
+              <IconDownload size={16} />
+            </Button>
+            <Button
+              className={"button-flex"}
+              tool-tip="Import release notes data"
+              tip-align="right"
+              fullWidth
+              onClick={handleImportReleaseNotes}
+              secondary
+              disabled={isImporting}
+            >
+              <IconUpload size={16} />
+            </Button>
+          </Columns>
+
+          <VerticalSpace space="extraSmall" />
+
+          {selectedSprintId && (
+            <Columns space="extraSmall">
+              <Button
+                className={"button-flex"}
+                tool-tip="Publish notes to canvas"
+                tip-align="left"
+                fullWidth
+                onClick={handlePublishSprintNotes}
+                secondary
+                disabled={isPublishingSprintNotes}
+              >
+                <IconBlocks size={16} />
+              </Button>
+              <Button
+                className={"button-flex"}
+                tool-tip="Unpublish notes from canvas"
+                tip-align="right"
+                fullWidth
+                onClick={handleClearCanvasNotes}
+                secondary
+                disabled={isClearingCanvas}
+              >
+                <IconEraser size={16} />
+              </Button>
+            </Columns>
+          )}
+        </div>
       )}
 
       {/* Rename Inline UI */}
