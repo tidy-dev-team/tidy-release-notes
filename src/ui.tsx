@@ -24,6 +24,8 @@ import {
   IconTrash,
   IconPlus,
   IconRefresh,
+  IconDownload,
+  IconUpload,
 } from "@tabler/icons-preact";
 import { emit, on } from "@create-figma-plugin/utilities";
 import { h } from "preact";
@@ -57,6 +59,11 @@ import {
   ViewComponentSetHandler,
   PublishSprintReleaseNotesHandler,
   SprintReleaseNotesPublishedHandler,
+  ExportReleaseNotesHandler,
+  ReleaseNotesExportedHandler,
+  ImportReleaseNotesHandler,
+  ReleaseNotesImportedHandler,
+  ReleaseNotesExportData,
 } from "./types";
 
 // ===================
@@ -197,9 +204,8 @@ function Plugin() {
   // Component Sets State
   // ===================
   const [componentSets, setComponentSets] = useState<ComponentSetInfo[]>([]);
-  const [selectedComponentId, setSelectedComponentId] = useState<string | null>(
-    null
-  );
+  const [selectedComponentId, setSelectedComponentId] =
+    useState<string | null>(null);
   const [componentSearchValue, setComponentSearchValue] = useState<string>("");
 
   // ===================
@@ -222,12 +228,13 @@ function Plugin() {
   const [noteTag, setNoteTag] = useState<NoteTag>("enhancement");
   const [isDeleteNoteConfirmOpen, setIsDeleteNoteConfirmOpen] =
     useState<boolean>(false);
-  const [pendingDeleteNoteId, setPendingDeleteNoteId] = useState<string | null>(
-    null
-  );
+  const [pendingDeleteNoteId, setPendingDeleteNoteId] =
+    useState<string | null>(null);
   const [isPublishingSprintNotes, setIsPublishingSprintNotes] =
     useState<boolean>(false);
   const [isClearingCanvas, setIsClearingCanvas] = useState<boolean>(false);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
+  const [isImporting, setIsImporting] = useState<boolean>(false);
 
   // ===================
   // Derived State
@@ -297,6 +304,40 @@ function Plugin() {
       "RELEASE_NOTES_FROM_CANVAS_CLEARED",
       () => {
         setIsClearingCanvas(false);
+      }
+    );
+
+    on<ReleaseNotesExportedHandler>(
+      "RELEASE_NOTES_EXPORTED",
+      (data: ReleaseNotesExportData) => {
+        setIsExporting(false);
+        // Create and download the JSON file
+        const jsonString = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonString], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const date = new Date().toISOString().split("T")[0];
+        const filename = `release-notes-backup-${date}.json`;
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    );
+
+    on<ReleaseNotesImportedHandler>(
+      "RELEASE_NOTES_IMPORTED",
+      (success: boolean, message: string) => {
+        setIsImporting(false);
+        if (success) {
+          console.log("Import successful:", message);
+        } else {
+          console.error("Import failed:", message);
+          alert(`Import failed: ${message}`);
+        }
       }
     );
 
@@ -406,6 +447,45 @@ function Plugin() {
   const handleClearCanvasNotes = useCallback(() => {
     setIsClearingCanvas(true);
     emit<ClearReleaseNotesFromCanvasHandler>("CLEAR_RELEASE_NOTES_FROM_CANVAS");
+  }, []);
+
+  const handleExportReleaseNotes = useCallback(() => {
+    setIsExporting(true);
+    emit<ExportReleaseNotesHandler>("EXPORT_RELEASE_NOTES");
+  }, []);
+
+  const handleImportReleaseNotes = useCallback(() => {
+    // Create a hidden file input and trigger it
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const content = e.target?.result as string;
+          const data = JSON.parse(content) as ReleaseNotesExportData;
+
+          // Basic validation
+          if (!data.sprints || !Array.isArray(data.sprints)) {
+            alert("Invalid file format: missing sprints array");
+            return;
+          }
+
+          setIsImporting(true);
+          emit<ImportReleaseNotesHandler>("IMPORT_RELEASE_NOTES", data);
+        } catch (error) {
+          alert(
+            "Failed to parse JSON file. Please select a valid backup file."
+          );
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
   }, []);
 
   const handleConfirmDelete = useCallback(() => {
@@ -624,6 +704,35 @@ function Plugin() {
             disabled={isClearingCanvas}
           >
             <IconEraser size={16} />
+          </Button>
+        </Columns>
+      )}
+      <VerticalSpace space="extraSmall" />
+
+      {/* Export/Import Buttons */}
+      {sprints.length > 0 && !isRenaming && (
+        <Columns space="extraSmall">
+          <Button
+            className={"button-flex"}
+            tool-tip="Export release notes data"
+            tip-align="left"
+            fullWidth
+            onClick={handleExportReleaseNotes}
+            secondary
+            disabled={isExporting}
+          >
+            <IconDownload size={16} />
+          </Button>
+          <Button
+            className={"button-flex"}
+            tool-tip="Import release notes data"
+            tip-align="right"
+            fullWidth
+            onClick={handleImportReleaseNotes}
+            secondary
+            disabled={isImporting}
+          >
+            <IconUpload size={16} />
           </Button>
         </Columns>
       )}

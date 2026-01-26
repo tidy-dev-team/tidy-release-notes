@@ -29,6 +29,11 @@ import {
   SprintReleaseNotesPublishedHandler,
   ClearReleaseNotesFromCanvasHandler,
   ReleaseNotesFromCanvasClearedHandler,
+  ExportReleaseNotesHandler,
+  ReleaseNotesExportedHandler,
+  ImportReleaseNotesHandler,
+  ReleaseNotesImportedHandler,
+  ReleaseNotesExportData,
 } from "./types";
 
 const PLUGIN_NAMESPACE = "tidy_release_notes";
@@ -1552,6 +1557,77 @@ export default function () {
       emit<ReleaseNotesFromCanvasClearedHandler>(
         "RELEASE_NOTES_FROM_CANVAS_CLEARED"
       );
+    }
+  );
+
+  // ===================
+  // Export/Import Handlers
+  // ===================
+  on<ExportReleaseNotesHandler>("EXPORT_RELEASE_NOTES", function () {
+    const sprints = loadAllSprints();
+    const exportData: ReleaseNotesExportData = {
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      sprints: sprints,
+    };
+    emit<ReleaseNotesExportedHandler>("RELEASE_NOTES_EXPORTED", exportData);
+  });
+
+  on<ImportReleaseNotesHandler>(
+    "IMPORT_RELEASE_NOTES",
+    function (data: ReleaseNotesExportData) {
+      try {
+        // Validate basic structure
+        if (!data || !Array.isArray(data.sprints)) {
+          emit<ReleaseNotesImportedHandler>(
+            "RELEASE_NOTES_IMPORTED",
+            false,
+            "Invalid data format: sprints array is missing"
+          );
+          return;
+        }
+
+        // Clear existing sprints
+        const existingKeys =
+          figma.root.getSharedPluginDataKeys(PLUGIN_NAMESPACE);
+        for (const key of existingKeys) {
+          if (key.startsWith(SPRINT_KEY_PREFIX)) {
+            figma.root.setSharedPluginData(PLUGIN_NAMESPACE, key, "");
+          }
+        }
+
+        // Import new sprints
+        for (const sprint of data.sprints) {
+          if (sprint.id && sprint.name && Array.isArray(sprint.notes)) {
+            saveSprint(sprint);
+          }
+        }
+
+        // Update last selected sprint if we have any
+        if (data.sprints.length > 0) {
+          setLastSprintId(data.sprints[0].id);
+        } else {
+          setLastSprintId(null);
+        }
+
+        // Notify UI of update
+        const payload = getSprintsPayload();
+        emit<SprintsUpdatedHandler>("SPRINTS_UPDATED", payload);
+
+        emit<ReleaseNotesImportedHandler>(
+          "RELEASE_NOTES_IMPORTED",
+          true,
+          `Successfully imported ${data.sprints.length} sprint(s)`
+        );
+      } catch (error) {
+        emit<ReleaseNotesImportedHandler>(
+          "RELEASE_NOTES_IMPORTED",
+          false,
+          `Import failed: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
+      }
     }
   );
 

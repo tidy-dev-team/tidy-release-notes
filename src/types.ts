@@ -194,3 +194,37 @@ export interface ReleaseNotesFromCanvasClearedHandler extends EventHandler {
   name: "RELEASE_NOTES_FROM_CANVAS_CLEARED";
   handler: () => void;
 }
+
+// ===================
+// Export/Import Events
+// ===================
+
+export interface ReleaseNotesExportData {
+  version: string;
+  exportedAt: string;
+  sprints: Sprint[];
+}
+
+// UI -> Main: Request export of all release notes data
+export interface ExportReleaseNotesHandler extends EventHandler {
+  name: "EXPORT_RELEASE_NOTES";
+  handler: () => void;
+}
+
+// Main -> UI: Return exported release notes data
+export interface ReleaseNotesExportedHandler extends EventHandler {
+  name: "RELEASE_NOTES_EXPORTED";
+  handler: (data: ReleaseNotesExportData) => void;
+}
+
+// UI -> Main: Import release notes data (replaces existing)
+export interface ImportReleaseNotesHandler extends EventHandler {
+  name: "IMPORT_RELEASE_NOTES";
+  handler: (data: ReleaseNotesExportData) => void;
+}
+
+// Main -> UI: Release notes import completed
+export interface ReleaseNotesImportedHandler extends EventHandler {
+  name: "RELEASE_NOTES_IMPORTED";
+  handler: (success: boolean, message: string) => void;
+}
