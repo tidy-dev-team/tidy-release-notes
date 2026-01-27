@@ -27,6 +27,25 @@
   display: flex !important;
   justify-content: center;
   align-items: center;
+  width: 100% !important;
+}
+
+.button-row {
+  display: flex !important;
+  gap: 4px;
+}
+
+.button-row > * {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+}
+
+.button-primary-text {
+  color: var(--primary-color) !important;
+}
+
+.button-danger-text {
+  color: #dc2626 !important;
 }
 
 button {
@@ -67,13 +86,13 @@ button[tool-tip]:hover::after {
   transition-delay: 1000ms;
 }
 
-button[tip-align*=left]::after {
+button[tip-align*="left"]::after {
   right: unset;
   left: 0;
   transform: translateX(0);
 }
 
-button[tip-align*=right]::after {
+button[tip-align*="right"]::after {
   right: 0;
   transform: translateX(0);
 }
@@ -128,15 +147,17 @@ div:has(.header) {
   isolation: isolate;
 }
 
-.fill-button, div:has(.fill-button):not(div:has(div button)) {
+.fill-button,
+div:has(.fill-button):not(div:has(div button)) {
   width: 100%;
 }
 
-div[class*=_textbox_]:has(div[class*=_menu_]):not(div[class*=_textbox_]:has(div[class*=_hidden_])) ~ .sticky-header {
+div[class*="_textbox_"]:has(div[class*="_menu_"]):not(div[class*="_textbox_"]:has(div[class*="_hidden_"]))
+  ~ .sticky-header {
   visibility: hidden;
 }
 
-div[class*=_modal_] {
+div[class*="_modal_"] {
   background-color: #ffffff;
   border-radius: 8px;
   padding: 0px;

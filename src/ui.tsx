@@ -666,84 +666,90 @@ function Plugin() {
       {!isRenaming && (
         <div>
           {selectedSprintId && (
-            <Columns space="extraSmall">
+            <div className="button-row">
               <Button
                 className={"button-flex"}
-                tool-tip="Rename sprint"
-                tip-align="left"
+                /* tool-tip="Rename sprint" */
+                /* tip-align="left" */
                 fullWidth
                 onClick={handleStartRename}
                 secondary
               >
-                <IconEdit size={16} />
+                {/* <IconEdit size={16} /> */}
+                Edit sprint
               </Button>
               <Button
-                className={"button-flex"}
-                tool-tip="Delete sprint"
-                tip-align="right"
+                className={"button-flex button-danger-text"}
+                /* tool-tip="Delete sprint" */
+                /* tip-align="right" */
                 fullWidth
                 onClick={handleOpenDeleteConfirm}
                 secondary
               >
-                <IconTrash size={16} />
+                {/* <IconTrash size={16} /> */}
+                Delete sprint
               </Button>
-            </Columns>
+            </div>
           )}
 
           <VerticalSpace space="extraSmall" />
 
-          <Columns space="extraSmall">
+          <div className="button-row">
             <Button
               className={"button-flex"}
-              tool-tip="Export release notes data"
-              tip-align="left"
+              /* tool-tip="Export release notes data" */
+              /* tip-align="left" */
               fullWidth
               onClick={handleExportReleaseNotes}
               secondary
               disabled={isExporting || sprints.length === 0}
             >
-              <IconDownload size={16} />
+              {/* <IconDownload size={16} /> */}
+              Export notes
             </Button>
             <Button
               className={"button-flex"}
-              tool-tip="Import release notes data"
-              tip-align="right"
+              /* tool-tip="Import release notes data" */
+              /* tip-align="right" */
               fullWidth
               onClick={handleImportReleaseNotes}
               secondary
               disabled={isImporting}
             >
-              <IconUpload size={16} />
+              {/* <IconUpload size={16} /> */}
+              Import notes
             </Button>
-          </Columns>
+          </div>
 
           <VerticalSpace space="extraSmall" />
 
           {selectedSprintId && (
-            <Columns space="extraSmall">
+            <div className="button-row">
               <Button
-                className={"button-flex"}
-                tool-tip="Publish notes to canvas"
-                tip-align="left"
+                className={"button-flex button-primary-text"}
+                /* tool-tip="Publish notes to canvas" */
+                /* tip-align="left" */
                 fullWidth
                 onClick={handlePublishSprintNotes}
                 secondary
                 disabled={isPublishingSprintNotes}
               >
-                <IconRocket size={16} color="#0D99FF" />
+                {/* <IconRocket size={16} color="#0D99FF" /> */}
+                Publish to canvas
               </Button>
               <Button
                 className={"button-flex"}
-                tool-tip="Unpublish notes from canvas"
-                tip-align="right"
+                /* tool-tip="Unpublish notes from canvas" */
+                /* tip-align="right" */
                 fullWidth
                 onClick={handleClearCanvasNotes}
                 secondary
                 disabled={isClearingCanvas}
               >
-                <IconEraser size={16} />
+                {/* <IconEraser size={16} /> */}
+                Delete from canvas
               </Button>
-            </Columns>
+            </div>
           )}
         </div>
       )}
