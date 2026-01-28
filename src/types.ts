@@ -77,6 +77,12 @@ export interface SelectComponentSetHandler extends EventHandler {
   handler: (id: string | null) => void;
 }
 
+// Main -> UI: Canvas selection changed to a known component set
+export interface CanvasComponentSetSelectedHandler extends EventHandler {
+  name: "CANVAS_COMPONENT_SET_SELECTED";
+  handler: (id: string) => void;
+}
+
 // ===================
 // Sprint Events
 // ===================

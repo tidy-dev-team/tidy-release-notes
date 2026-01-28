@@ -8,6 +8,7 @@ import {
   ComponentSetInfo,
   ComponentSetsPayload,
   SelectComponentSetHandler,
+  CanvasComponentSetSelectedHandler,
   Sprint,
   SprintsPayload,
   LoadSprintsHandler,
@@ -1643,6 +1644,61 @@ export default function () {
       }
     }
   );
+
+  // ===================
+  // Canvas Selection Change Handler
+  // ===================
+  figma.on("selectionchange", () => {
+    const selection = figma.currentPage.selection;
+    if (selection.length === 0) return;
+
+    // Get the first selected node
+    const selectedNode = selection[0];
+
+    // Check if it's a ComponentSetNode directly
+    let componentSetId: string | null = null;
+
+    if (selectedNode.type === "COMPONENT_SET") {
+      componentSetId = selectedNode.id;
+    } else {
+      // Check if selected node is inside a ComponentSet (e.g., a variant or child)
+      let parent: BaseNode | null = selectedNode.parent;
+      while (parent) {
+        if (parent.type === "COMPONENT_SET") {
+          componentSetId = parent.id;
+          break;
+        }
+        parent = parent.parent;
+      }
+    }
+
+    if (!componentSetId) return;
+
+    // Check if this component set is in our saved list
+    const savedData = figma.root.getSharedPluginData(
+      PLUGIN_NAMESPACE,
+      COMPONENT_SETS_KEY
+    );
+
+    if (!savedData) return;
+
+    try {
+      const componentSets: ComponentSetInfo[] = JSON.parse(savedData);
+      const matchingComponentSet = componentSets.find(
+        (cs) => cs.id === componentSetId
+      );
+
+      if (matchingComponentSet) {
+        // Emit event to UI to update the dropdown
+        emit<CanvasComponentSetSelectedHandler>(
+          "CANVAS_COMPONENT_SET_SELECTED",
+          matchingComponentSet.id
+        );
+      }
+    } catch (e) {
+      console.error("Failed to parse component sets for selection change:", e);
+    }
+  });
 
   showUI({
     height: 600,

@@ -34,6 +34,7 @@ import "!./app.css";
 
 import {
   AddNoteHandler,
+  CanvasComponentSetSelectedHandler,
   ClearReleaseNotesFromCanvasHandler,
   ComponentSetInfo,
   ComponentSetsFoundHandler,
@@ -345,6 +346,21 @@ function Plugin() {
     emit<LoadComponentSetsHandler>("LOAD_COMPONENT_SETS");
     emit<LoadSprintsHandler>("LOAD_SPRINTS");
   }, []);
+
+  // Canvas selection change listener - auto-select component set in dropdown
+  // Separate effect to have access to current componentSets state
+  useEffect(() => {
+    return on<CanvasComponentSetSelectedHandler>(
+      "CANVAS_COMPONENT_SET_SELECTED",
+      (id: string) => {
+        const selected = componentSets.find((cs) => cs.id === id);
+        if (selected) {
+          setSelectedComponentId(id);
+          setComponentSearchValue(selected.name);
+        }
+      }
+    );
+  }, [componentSets]);
 
   // ===================
   // Component Sets Handlers
