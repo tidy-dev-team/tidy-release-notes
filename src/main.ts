@@ -963,6 +963,7 @@ async function buildComponentReleaseNotesFrame(
   await figma.loadFontAsync({ family: "Inter", style: "Bold" });
 
   const frameName = `${componentSet.name}-release-notes`;
+  
   // Remove old frame if it exists
   const existing = page.children.find(
     (child) => child.type === "FRAME" && child.name === frameName
@@ -1473,16 +1474,15 @@ export default function () {
       const table = await buildAggregatedReleaseNotesTable(sprints);
       frame.appendChild(table);
 
-      // Build per-component frames in the background
-      const notesByComponentSet = new Map<string, ReleaseNote[]>();
-      for (const note of sprint.notes) {
-        const existing = notesByComponentSet.get(note.componentSetId) || [];
-        existing.push(note);
-        notesByComponentSet.set(note.componentSetId, existing);
+      // Build per-component frames for ALL component sets across ALL sprints
+      const allComponentSetIds = new Set<string>();
+      for (const s of sprints) {
+        for (const note of s.notes) {
+          allComponentSetIds.add(note.componentSetId);
+        }
       }
 
-      for (const entry of Array.from(notesByComponentSet.entries())) {
-        const componentSetId = entry[0];
+      for (const componentSetId of Array.from(allComponentSetIds)) {
         const node = figma.getNodeById(componentSetId);
         if (!node || node.type !== "COMPONENT_SET") {
           continue;
